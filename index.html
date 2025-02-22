@@ -7,85 +7,146 @@
             content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
         />
         <title>myDuren</title>
-        <script src="script.js"></script>
-        <style>
-            /* Basic CSS untuk mobile compatibility */
-            body {
-                font-family: Arial, sans-serif;
-                padding: 16px;
-            }
-            input,
-            select,
-            button {
-                width: 100%;
-                padding: 8px;
-                margin: 4px 0;
-            }
-            table {
-                width: 100%;
-                border-collapse: collapse;
-                margin-top: 16px;
-            }
-            th,
-            td {
-                border: 1px solid #ddd;
-                padding: 8px;
-                text-align: center;
-            }
-        </style>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script src="script.js" defer></script>
     </head>
-    <body>
-        <h1>myDuren</h1>
-
-        <label>Stok Awal (box):</label>
-        <input type="number" id="stokAwal" value="100" />
-
-        <label>Nama Pembeli:</label>
-        <input type="text" id="namaPembeli" placeholder="Nama pembeli" />
-
-        <label>Jumlah Box Terjual:</label>
-        <input type="number" id="jumlahTerjual" placeholder="Jumlah box" />
-
-        <label>Jenis Pembeli:</label>
-        <select id="jenisPembeli">
-            <option value="reguler">Reguler (Rp 35.000/box)</option>
-            <option value="reseller">Reseller (Rp 30.000/box)</option>
-        </select>
-
-        <label>Status Pembayaran:</label>
-        <select id="statusPembayaran">
-            <option value="lunas">Lunas</option>
-            <option value="belum lunas">Belum Lunas</option>
-        </select>
-
-        <label>Metode Pembayaran:</label>
-        <select id="metodePembayaran">
-            <option value="cash">Cash</option>
-            <option value="transfer">Transfer</option>
-        </select>
-
-        <button id="hitungButton">Hitung</button>
-        <button id="resetButton">Reset Data</button>
-
-        <table>
-            <thead>
-                <tr>
-                    <th>Nama Pembeli</th>
-                    <th>Jumlah</th>
-                    <th>Total</th>
-                    <th>Status</th>
-                    <th>Metode</th>
-                </tr>
-            </thead>
-            <tbody id="tabelPenjualan"></tbody>
-        </table>
-
-        <div>
-            <h2>Total Keuangan</h2>
-            <p>Belum Lunas: Rp <span id="totalBelumLunas">0</span></p>
-            <p>Lunas: Rp <span id="totalLunas">0</span></p>
-            <p>Cash: Rp <span id="totalCash">0</span></p>
-            <p>Transfer: Rp <span id="totalTransfer">0</span></p>
+    <body class="bg-gray-100 p-4">
+        <div class="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-md">
+            <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">
+                myDuren
+            </h1>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700"
+                        >Stok Awal (box):</label
+                    >
+                    <input
+                        type="number"
+                        id="stokAwal"
+                        value="100"
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700"
+                        >Nama Pembeli:</label
+                    >
+                    <input
+                        type="text"
+                        id="namaPembeli"
+                        placeholder="Masukkan nama pembeli"
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700"
+                        >Jumlah Box Terjual:</label
+                    >
+                    <input
+                        type="number"
+                        id="jumlahTerjual"
+                        placeholder="Masukkan jumlah box terjual"
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700"
+                        >Jenis Pembeli:</label
+                    >
+                    <select
+                        id="jenisPembeli"
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                        <option value="reguler">Reguler (Rp 35.000/box)</option>
+                        <option value="reseller">
+                            Reseller (Rp 30.000/box)
+                        </option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700"
+                        >Status Pembayaran:</label
+                    >
+                    <select
+                        id="statusPembayaran"
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                        <option value="lunas">Lunas</option>
+                        <option value="belum lunas">Belum Lunas</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700"
+                        >Metode Pembayaran:</label
+                    >
+                    <select
+                        id="metodePembayaran"
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                        <option value="cash">Cash</option>
+                        <option value="transfer">Transfer</option>
+                    </select>
+                </div>
+                <button
+                    onclick="hitungPenjualan()"
+                    class="w-full bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                    Hitung
+                </button>
+                <button
+                    onclick="resetData()"
+                    class="w-full bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
+                >
+                    Reset Semua Data
+                </button>
+            </div>
+            <div class="mt-6">
+                <table class="w-full border-collapse border border-gray-300">
+                    <thead>
+                        <tr class="bg-gray-200">
+                            <th class="border border-gray-300 px-4 py-2">
+                                Nama Pembeli
+                            </th>
+                            <th class="border border-gray-300 px-4 py-2">
+                                Jumlah Box
+                            </th>
+                            <th class="border border-gray-300 px-4 py-2">
+                                Total Penjualan
+                            </th>
+                            <th class="border border-gray-300 px-4 py-2">
+                                Status Pembayaran
+                            </th>
+                            <th class="border border-gray-300 px-4 py-2">
+                                Metode Pembayaran
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelPenjualan" class="text-center"></tbody>
+                </table>
+            </div>
+            <div class="mt-6 bg-gray-50 p-4 rounded-lg">
+                <h2 class="text-xl font-semibold text-gray-800">
+                    Total Keuangan
+                </h2>
+                <div class="mt-2 space-y-2">
+                    <p>
+                        <strong>Total Uang Belum Lunas:</strong> Rp
+                        <span id="totalBelumLunas">0</span>
+                    </p>
+                    <p>
+                        <strong>Total Uang Lunas:</strong> Rp
+                        <span id="totalLunas">0</span>
+                    </p>
+                    <p>
+                        <strong>Total Cash:</strong> Rp
+                        <span id="totalCash">0</span>
+                    </p>
+                    <p>
+                        <strong>Total Transfer:</strong> Rp
+                        <span id="totalTransfer">0</span>
+                    </p>
+                </div>
+            </div>
         </div>
     </body>
 </html>
