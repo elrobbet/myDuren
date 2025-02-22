@@ -4,18 +4,14 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>myDuren</title>
-        <!-- Tambahkan Tailwind CSS dari CDN -->
         <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
         <script src="script.js" defer></script>
-        <!-- Referensi ke file JavaScript -->
     </head>
     <body class="bg-gray-100 p-6">
         <div class="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-md">
             <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">
                 myDuren
             </h1>
-
-            <!-- Form Input -->
             <div class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700"
@@ -25,7 +21,6 @@
                         type="number"
                         id="stokAwal"
                         value="100"
-                        readonly
                         class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
@@ -102,8 +97,6 @@
                     Reset Semua Data
                 </button>
             </div>
-
-            <!-- Tabel Penjualan -->
             <div class="mt-6">
                 <table class="w-full border-collapse border border-gray-300">
                     <thead>
@@ -128,8 +121,6 @@
                     <tbody id="tabelPenjualan" class="text-center"></tbody>
                 </table>
             </div>
-
-            <!-- Total Keuangan -->
             <div class="mt-6 bg-gray-50 p-4 rounded-lg">
                 <h2 class="text-xl font-semibold text-gray-800">
                     Total Keuangan
