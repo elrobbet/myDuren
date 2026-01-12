@@ -33,56 +33,40 @@ class StateManager {
         document
             .getElementById('resetButton')
             .addEventListener('click', () => this.handleReset());
-
-        // Mobile touch support
-        document
-            .getElementById('hitungButton')
-            .addEventListener('touchend', (e) => {
-                e.preventDefault();
-                this.handleHitung();
-            });
     }
 
     setupTableHandlers() {
-        const tabel = document.getElementById('tabelPenjualan');
-
-        const handler = (e) => {
-            const cell = e.target.closest('[data-action]');
-            if (!cell) return;
-
-            const index = parseInt(cell.dataset.index);
-            const action = cell.dataset.action;
-
-            if (action === 'toggle-status') {
-                this.toggleStatus(index);
-            } else if (action === 'toggle-metode') {
-                this.toggleMetode(index);
+        // Event delegation untuk select di tabel dan kartu
+        document.addEventListener('change', (e) => {
+            if (e.target.classList.contains('status-select')) {
+                const index = parseInt(e.target.dataset.index);
+                this.changeStatus(index, e.target.value);
+            } else if (e.target.classList.contains('metode-select')) {
+                const index = parseInt(e.target.dataset.index);
+                this.changeMetode(index, e.target.value);
             }
-        };
-
-        tabel.addEventListener('click', handler);
-        tabel.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            handler(e);
         });
     }
 
-    toggleStatus(index) {
+    changeStatus(index, newStatus) {
         const trx = this.state.transactions[index];
+        const oldStatus = trx.status;
 
-        // Update totals
-        if (trx.status === 'lunas') {
+        if (oldStatus === newStatus) return;
+
+        // Update total - kurangi dari status lama
+        if (oldStatus === 'lunas') {
             this.state.totals.lunas -= trx.total;
             this.state.totals[trx.metode] -= trx.total;
         } else {
             this.state.totals.belumLunas -= trx.total;
         }
 
-        // Toggle status
-        trx.status = trx.status === 'lunas' ? 'belum lunas' : 'lunas';
+        // Update status
+        trx.status = newStatus;
 
-        // Update metode
-        if (trx.status === 'lunas') {
+        // Update metode dan total - tambahkan ke status baru
+        if (newStatus === 'lunas') {
             trx.metode = trx.originalMetode;
             this.state.totals.lunas += trx.total;
             this.state.totals[trx.metode] += trx.total;
@@ -95,15 +79,18 @@ class StateManager {
         this.updateUI();
     }
 
-    toggleMetode(index) {
+    changeMetode(index, newMetode) {
         const trx = this.state.transactions[index];
         if (trx.status !== 'lunas') return;
 
+        const oldMetode = trx.metode;
+        if (oldMetode === newMetode) return;
+
         // Update totals
-        this.state.totals[trx.metode] -= trx.total;
-        trx.metode = trx.metode === 'cash' ? 'transfer' : 'cash';
-        this.state.totals[trx.metode] += trx.total;
-        trx.originalMetode = trx.metode;
+        this.state.totals[oldMetode] -= trx.total;
+        trx.metode = newMetode;
+        this.state.totals[newMetode] += trx.total;
+        trx.originalMetode = newMetode;
 
         this.saveState();
         this.updateUI();
@@ -179,43 +166,115 @@ class StateManager {
         }
     }
 
+    getStatusSelectClass(status) {
+        return status === 'lunas' ? 'status-lunas' : 'status-belum';
+    }
+
+    getMetodeSelectClass(metode) {
+        if (metode === 'cash') return 'metode-cash';
+        if (metode === 'transfer') return 'metode-transfer';
+        return '';
+    }
+
     updateUI() {
         // Update stok
         document.getElementById('stokAwal').value = this.state.stok;
 
-        // Update tabel
+        const hasTransactions = this.state.transactions.length > 0;
+
+        // Update tabel desktop
         const tbody = document.getElementById('tabelPenjualan');
-        tbody.innerHTML = this.state.transactions
-            .map(
-                (trx, index) => `
-            <tr>
-                <td class="border px-4 py-2">${trx.nama}</td>
-                <td class="border px-4 py-2">${trx.jumlah}</td>
-                <td class="border px-4 py-2">Rp ${trx.total.toLocaleString()}</td>
-                <td 
-                    class="border px-4 py-2 cursor-pointer hover:bg-gray-100"
-                    data-action="toggle-status" 
-                    data-index="${index}"
-                >
-                    ${trx.status}
-                </td>
-                <td 
-                    class="border px-4 py-2 ${
-                        trx.status === 'lunas'
-                            ? 'cursor-pointer hover:bg-gray-100'
-                            : 'cursor-not-allowed'
-                    }"
-                    data-action="${
-                        trx.status === 'lunas' ? 'toggle-metode' : ''
-                    }" 
-                    data-index="${index}"
-                >
-                    ${trx.metode}
-                </td>
-            </tr>
-        `,
-            )
-            .join('');
+        const emptyDesktop = document.getElementById('emptyStateDesktop');
+        
+        if (hasTransactions) {
+            emptyDesktop.classList.add('hidden');
+            tbody.innerHTML = this.state.transactions
+                .map(
+                    (trx, index) => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 text-left font-medium text-gray-900">${trx.nama}</td>
+                    <td class="px-4 py-3 text-center text-gray-700">${trx.jumlah}</td>
+                    <td class="px-4 py-3 text-right text-gray-700 font-medium">Rp ${trx.total.toLocaleString()}</td>
+                    <td class="px-4 py-3 text-center">
+                        <select 
+                            class="inline-select status-select ${this.getStatusSelectClass(trx.status)}"
+                            data-index="${index}"
+                        >
+                            <option value="lunas" ${trx.status === 'lunas' ? 'selected' : ''}>Lunas</option>
+                            <option value="belum lunas" ${trx.status === 'belum lunas' ? 'selected' : ''}>Belum Lunas</option>
+                        </select>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        <select 
+                            class="inline-select metode-select ${this.getMetodeSelectClass(trx.metode)}"
+                            data-index="${index}"
+                            ${trx.status !== 'lunas' ? 'disabled' : ''}
+                        >
+                            <option value="cash" ${trx.metode === 'cash' ? 'selected' : ''}>Cash</option>
+                            <option value="transfer" ${trx.metode === 'transfer' ? 'selected' : ''}>Transfer</option>
+                            ${trx.status !== 'lunas' ? `<option value="belum lunas" selected>-</option>` : ''}
+                        </select>
+                    </td>
+                </tr>
+            `,
+                )
+                .join('');
+        } else {
+            tbody.innerHTML = '';
+            emptyDesktop.classList.remove('hidden');
+        }
+
+        // Update kartu mobile
+        const cardContainer = document.getElementById('cardPenjualan');
+        const emptyMobile = document.getElementById('emptyStateMobile');
+
+        if (hasTransactions) {
+            emptyMobile.classList.add('hidden');
+            cardContainer.innerHTML = this.state.transactions
+                .map(
+                    (trx, index) => `
+                <div class="transaction-card">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <p class="font-bold text-gray-900 text-lg">${trx.nama}</p>
+                            <p class="text-gray-500 text-sm">${trx.jumlah} box</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-gray-900 text-lg">Rp ${trx.total.toLocaleString()}</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-3 mt-4">
+                        <div class="flex-1">
+                            <p class="label mb-1">Status</p>
+                            <select 
+                                class="inline-select status-select w-full ${this.getStatusSelectClass(trx.status)}"
+                                data-index="${index}"
+                            >
+                                <option value="lunas" ${trx.status === 'lunas' ? 'selected' : ''}>Lunas</option>
+                                <option value="belum lunas" ${trx.status === 'belum lunas' ? 'selected' : ''}>Belum Lunas</option>
+                            </select>
+                        </div>
+                        <div class="flex-1">
+                            <p class="label mb-1">Metode</p>
+                            <select 
+                                class="inline-select metode-select w-full ${this.getMetodeSelectClass(trx.metode)}"
+                                data-index="${index}"
+                                ${trx.status !== 'lunas' ? 'disabled' : ''}
+                            >
+                                <option value="cash" ${trx.metode === 'cash' ? 'selected' : ''}>Cash</option>
+                                <option value="transfer" ${trx.metode === 'transfer' ? 'selected' : ''}>Transfer</option>
+                                ${trx.status !== 'lunas' ? `<option value="belum lunas" selected>-</option>` : ''}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            `,
+                )
+                .join('');
+        } else {
+            cardContainer.innerHTML = '';
+            emptyMobile.classList.remove('hidden');
+        }
 
         // Update totals
         document.getElementById('totalBelumLunas').textContent =
