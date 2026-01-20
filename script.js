@@ -17,12 +17,14 @@ class StateManager {
                 transfer: 0,
             },
         };
+        this.editingIndex = null;
     }
 
     init() {
         this.loadState();
         this.setupEventListeners();
         this.setupTableHandlers();
+        this.setupModalHandlers();
         this.updateUI();
     }
 
@@ -36,7 +38,7 @@ class StateManager {
     }
 
     setupTableHandlers() {
-        // Event delegation untuk select di tabel dan kartu
+        // Event delegation untuk select dan button di tabel dan kartu
         document.addEventListener('change', (e) => {
             if (e.target.classList.contains('status-select')) {
                 const index = parseInt(e.target.dataset.index);
@@ -46,6 +48,139 @@ class StateManager {
                 this.changeMetode(index, e.target.value);
             }
         });
+
+        document.addEventListener('click', (e) => {
+            // Handle delete button
+            if (e.target.closest('.delete-btn')) {
+                const btn = e.target.closest('.delete-btn');
+                const index = parseInt(btn.dataset.index);
+                this.handleDelete(index);
+            }
+            // Handle edit button
+            if (e.target.closest('.edit-btn')) {
+                const btn = e.target.closest('.edit-btn');
+                const index = parseInt(btn.dataset.index);
+                this.openEditModal(index);
+            }
+        });
+    }
+
+    setupModalHandlers() {
+        const modal = document.getElementById('editModal');
+        const cancelBtn = document.getElementById('cancelEditBtn');
+        const saveBtn = document.getElementById('saveEditBtn');
+
+        cancelBtn.addEventListener('click', () => this.closeEditModal());
+        saveBtn.addEventListener('click', () => this.saveEdit());
+
+        // Close modal when clicking outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                this.closeEditModal();
+            }
+        });
+
+        // Handle Enter key in input
+        document.getElementById('editJumlahInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                this.saveEdit();
+            }
+        });
+    }
+
+    openEditModal(index) {
+        const trx = this.state.transactions[index];
+        this.editingIndex = index;
+
+        document.getElementById('editNama').textContent = trx.nama;
+        document.getElementById('editJumlahInput').value = trx.jumlah;
+        document.getElementById('editModal').classList.remove('modal-hidden');
+        document.getElementById('editJumlahInput').focus();
+        document.getElementById('editJumlahInput').select();
+    }
+
+    closeEditModal() {
+        document.getElementById('editModal').classList.add('modal-hidden');
+        this.editingIndex = null;
+    }
+
+    saveEdit() {
+        const newJumlah = parseInt(document.getElementById('editJumlahInput').value);
+        
+        if (isNaN(newJumlah) || newJumlah < 1) {
+            alert('Jumlah box harus minimal 1!');
+            return;
+        }
+
+        const index = this.editingIndex;
+        const trx = this.state.transactions[index];
+        const oldJumlah = trx.jumlah;
+        const diff = newJumlah - oldJumlah;
+
+        // Check stok
+        if (diff > 0 && diff > this.state.stok) {
+            alert('Stok tidak mencukupi!');
+            return;
+        }
+
+        // Recalculate total based on jenis
+        const oldTotal = trx.total;
+        let newTotal = 0;
+
+        if (trx.jenis === 'reseller') {
+            newTotal = newJumlah * HARGA.RESELLER;
+        } else {
+            // Reguler dengan promo 3 box
+            const promo3Box = Math.floor(newJumlah / 3);
+            const sisaBox = newJumlah % 3;
+            newTotal = promo3Box * HARGA.PAKET_3BOX + sisaBox * HARGA.REGULER;
+        }
+
+        // Update totals
+        const totalDiff = newTotal - oldTotal;
+
+        if (trx.status === 'lunas') {
+            this.state.totals.lunas += totalDiff;
+            this.state.totals[trx.metode] += totalDiff;
+        } else {
+            this.state.totals.belumLunas += totalDiff;
+        }
+
+        // Update transaction
+        trx.jumlah = newJumlah;
+        trx.total = newTotal;
+
+        // Update stok
+        this.state.stok -= diff;
+
+        this.saveState();
+        this.updateUI();
+        this.closeEditModal();
+    }
+
+    handleDelete(index) {
+        const trx = this.state.transactions[index];
+        
+        if (!confirm(`Hapus transaksi "${trx.nama}" (${trx.jumlah} box)?`)) {
+            return;
+        }
+
+        // Update totals
+        if (trx.status === 'lunas') {
+            this.state.totals.lunas -= trx.total;
+            this.state.totals[trx.metode] -= trx.total;
+        } else {
+            this.state.totals.belumLunas -= trx.total;
+        }
+
+        // Return stock
+        this.state.stok += trx.jumlah;
+
+        // Remove transaction
+        this.state.transactions.splice(index, 1);
+
+        this.saveState();
+        this.updateUI();
     }
 
     changeStatus(index, newStatus) {
@@ -131,6 +266,7 @@ class StateManager {
             nama,
             jumlah,
             total,
+            jenis,
             status,
             metode: status === 'belum lunas' ? 'belum lunas' : metode,
             originalMetode: metode,
@@ -215,6 +351,16 @@ class StateManager {
                             ${trx.status !== 'lunas' ? `<option value="belum lunas" selected>-</option>` : ''}
                         </select>
                     </td>
+                    <td class="px-4 py-3 text-center">
+                        <div class="flex gap-2 justify-center">
+                            <button class="btn-action btn-edit edit-btn" data-index="${index}" title="Edit jumlah">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                            </button>
+                            <button class="btn-action btn-delete delete-btn" data-index="${index}" title="Hapus">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                            </button>
+                        </div>
+                    </td>
                 </tr>
             `,
                 )
@@ -239,8 +385,16 @@ class StateManager {
                             <p class="font-bold text-gray-900 text-lg">${trx.nama}</p>
                             <p class="text-gray-500 text-sm">${trx.jumlah} box</p>
                         </div>
-                        <div class="text-right">
+                        <div class="text-right flex items-start gap-2">
                             <p class="font-bold text-gray-900 text-lg">Rp ${trx.total.toLocaleString()}</p>
+                            <div class="flex gap-1">
+                                <button class="btn-action btn-edit edit-btn" data-index="${index}" title="Edit jumlah">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                                </button>
+                                <button class="btn-action btn-delete delete-btn" data-index="${index}" title="Hapus">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div class="flex gap-3 mt-4">
@@ -304,6 +458,7 @@ class StateManager {
             this.state.transactions = this.state.transactions.map((trx) => ({
                 ...trx,
                 originalMetode: trx.originalMetode || trx.metode,
+                jenis: trx.jenis || 'reguler',
             }));
         }
     }
