@@ -1,169 +1,698 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-theme="light">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>myDuren</title>
-        <script src="https://cdn.tailwindcss.com"></script>
         <script src="script.js" defer></script>
         <style>
-            select {
-                -webkit-appearance: none;
-                -moz-appearance: none;
-                appearance: none;
-                background-image: url("data:image/svg+xml;charset=UTF-8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
-                background-repeat: no-repeat;
-                background-position: right 0.5rem center;
-                background-size: 1em;
+            :root {
+                --bg-page: #F7F4EE;
+                --bg-card: #FFFFFF;
+                --bg-well: #EFECE4;
+                --bg-hover: #F3EFE6;
+                --text-primary: #1C1917;
+                --text-secondary: #57534E;
+                --border-subtle: #D6D1C7;
+                --border-control: #78716C;
+                --accent-bg: #2D5A27;
+                --accent-bg-hover: #22461D;
+                --accent-bg-active: #193515;
+                --accent-text: #FFFFFF;
+                --focus-ring: #2D5A27;
+
+                --danger-bg: #FEE2E2;
+                --danger-border: #B91C1C;
+                --danger-text: #991B1B;
+                --danger-hover: #FECACA;
+
+                --edit-bg: #FEF3C7;
+                --edit-border: #B45309;
+                --edit-text: #78350F;
+                --edit-hover: #FDE68A;
+
+                --status-lunas-bg: #DCFCE7;
+                --status-lunas-border: #15803D;
+                --status-lunas-text: #14532D;
+
+                --status-belum-bg: #FEF3C7;
+                --status-belum-border: #B45309;
+                --status-belum-text: #78350F;
+
+                --metode-cash-bg: #DBEAFE;
+                --metode-cash-border: #1D4ED8;
+                --metode-cash-text: #1E3A8A;
+
+                --metode-transfer-bg: #F3E8FF;
+                --metode-transfer-border: #7E22CE;
+                --metode-transfer-text: #581C87;
+
+                --badge-premium-bg: #FEF3C7;
+                --badge-premium-border: #B45309;
+                --badge-premium-text: #78350F;
+
+                --badge-reguler-bg: #EFECE4;
+                --badge-reguler-border: #78716C;
+                --badge-reguler-text: #1C1917;
+
+                --shadow-card: 0 1px 3px rgba(28, 25, 23, 0.08);
+                --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                --font-mono: ui-monospace, "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
             }
 
-            @media screen and (-webkit-min-device-pixel-ratio: 0) {
-                select {
-                    padding-right: 2rem !important;
+            html[data-theme="dark"] {
+                --bg-page: #121614;
+                --bg-card: #1B211E;
+                --bg-well: #242C28;
+                --bg-hover: #28312C;
+                --text-primary: #F3EFE6;
+                --text-secondary: #B5B0A6;
+                --border-subtle: #333D38;
+                --border-control: #78827C;
+                --accent-bg: #E5B842;
+                --accent-bg-hover: #F0C755;
+                --accent-bg-active: #CFA332;
+                --accent-text: #121614;
+                --focus-ring: #E5B842;
+
+                --danger-bg: #3B1818;
+                --danger-border: #F87171;
+                --danger-text: #FECACA;
+                --danger-hover: #4C1D1D;
+
+                --edit-bg: #3B2A14;
+                --edit-border: #FBBF24;
+                --edit-text: #FEF3C7;
+                --edit-hover: #4D3618;
+
+                --status-lunas-bg: #133220;
+                --status-lunas-border: #4ADE80;
+                --status-lunas-text: #DCFCE7;
+
+                --status-belum-bg: #3B2A14;
+                --status-belum-border: #FBBF24;
+                --status-belum-text: #FEF3C7;
+
+                --metode-cash-bg: #172B4D;
+                --metode-cash-border: #60A5FA;
+                --metode-cash-text: #DBEAFE;
+
+                --metode-transfer-bg: #2E1B47;
+                --metode-transfer-border: #C084FC;
+                --metode-transfer-text: #F3E8FF;
+
+                --badge-premium-bg: #3B2A14;
+                --badge-premium-border: #FBBF24;
+                --badge-premium-text: #FEF3C7;
+
+                --badge-reguler-bg: #242C28;
+                --badge-reguler-border: #78827C;
+                --badge-reguler-text: #F3EFE6;
+
+                --shadow-card: 0 2px 6px rgba(0, 0, 0, 0.35);
+            }
+
+            *,
+            *::before,
+            *::after {
+                box-sizing: border-box;
+            }
+
+            body {
+                margin: 0;
+                background-color: var(--bg-page);
+                color: var(--text-primary);
+                font-family: var(--font-sans);
+                line-height: 1.5;
+                min-height: 100dvh;
+                display: flex;
+                flex-direction: column;
+            }
+
+            /* Base interaction affordances (R-39) */
+            a[href],
+            button:not(:disabled),
+            summary,
+            select:not(:disabled),
+            label[for],
+            input[type="checkbox"]:not(:disabled),
+            input[type="radio"]:not(:disabled),
+            [role="button"]:not([aria-disabled="true"]) {
+                cursor: pointer;
+            }
+
+            button:disabled,
+            select:disabled,
+            input:disabled,
+            [aria-disabled="true"] {
+                cursor: not-allowed;
+                opacity: 0.65;
+            }
+
+            /* Keyboard focus indicator (R-32) */
+            :focus-visible {
+                outline: 3px solid var(--focus-ring);
+                outline-offset: 2px;
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                *,
+                *::before,
+                *::after {
+                    animation-duration: 0.01ms !important;
+                    animation-iteration-count: 1 !important;
+                    transition-duration: 0.01ms !important;
+                    scroll-behavior: auto !important;
                 }
             }
 
-            /* Card style for mobile */
-            .transaction-card {
-                background: white;
-                border-radius: 12px;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            .num {
+                font-family: var(--font-mono);
+                font-variant-numeric: tabular-nums;
+            }
+
+            .app-shell {
+                width: 100%;
+                max-width: 1120px;
+                margin: 0 auto;
                 padding: 16px;
-                margin-bottom: 12px;
-                border: 1px solid #e5e7eb;
+                flex: 1;
             }
 
-            .transaction-card .label {
-                font-size: 12px;
-                color: #6b7280;
-                font-weight: 500;
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
+            /* Header with ledger double-rule motif */
+            .app-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+                padding-bottom: 14px;
+                margin-bottom: 20px;
+                border-bottom: 4px double var(--border-control);
             }
 
-            .transaction-card .value {
-                font-size: 15px;
-                color: #1f2937;
+            .brand-group {
+                display: flex;
+                align-items: baseline;
+                gap: 12px;
+                flex-wrap: wrap;
+            }
+
+            .app-title {
+                margin: 0;
+                font-size: clamp(1.4rem, 2.5vw, 1.85rem);
+                font-weight: 800;
+                letter-spacing: -0.02em;
+            }
+
+            .header-controls {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .stock-pill {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 6px 12px;
+                background-color: var(--bg-well);
+                border: 1px solid var(--border-control);
+                border-radius: 6px;
+                font-size: 0.875rem;
                 font-weight: 600;
             }
 
-            /* Select in table/card */
-            .inline-select {
-                padding: 6px 28px 6px 10px;
-                border-radius: 6px;
-                border: 1px solid #d1d5db;
-                font-size: 13px;
-                cursor: pointer;
-                background-color: #f9fafb;
-                min-width: 100px;
+            .theme-btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                min-height: 44px;
+                min-width: 44px;
+                padding: 8px 12px;
+                background-color: var(--bg-card);
+                color: var(--text-primary);
+                border: 1px solid var(--border-control);
+                border-radius: 8px;
+                font-size: 0.875rem;
+                font-weight: 600;
+                transition: background-color 0.15s ease;
             }
 
-            .inline-select:focus {
-                outline: none;
-                border-color: #3b82f6;
-                box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+            .theme-btn:hover {
+                background-color: var(--bg-well);
+            }
+
+            .theme-btn:active {
+                transform: translateY(1px);
+            }
+
+            /* Three-state responsive layout (R-03) */
+            .workspace-grid {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 20px;
+                align-items: start;
+            }
+
+            .card-panel {
+                background-color: var(--bg-card);
+                border: 1px solid var(--border-subtle);
+                border-radius: 10px;
+                padding: 18px;
+                box-shadow: var(--shadow-card);
+            }
+
+            .section-title {
+                margin: 0 0 14px 0;
+                font-size: 1.05rem;
+                font-weight: 700;
+                color: var(--text-primary);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+
+            /* Form Layout */
+            .form-grid {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 14px;
+            }
+
+            .field-group {
+                display: flex;
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .field-label {
+                font-size: 0.875rem;
+                font-weight: 600;
+                color: var(--text-primary);
+            }
+
+            .form-control {
+                width: 100%;
+                min-height: 44px;
+                padding: 9px 12px;
+                font-size: 0.95rem;
+                font-family: inherit;
+                color: var(--text-primary);
+                background-color: var(--bg-card);
+                border: 1.5px solid var(--border-control);
+                border-radius: 7px;
+                transition: border-color 0.15s ease, background-color 0.15s ease;
+            }
+
+            .form-control:hover:not(:disabled) {
+                border-color: var(--text-primary);
+            }
+
+            select.form-control,
+            select.inline-select {
+                -webkit-appearance: none;
+                -moz-appearance: none;
+                appearance: none;
+                background-image: url("data:image/svg+xml;charset=UTF-8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2378716C' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+                background-repeat: no-repeat;
+                background-position: right 0.65rem center;
+                background-size: 1em;
+                padding-right: 2.25rem;
+            }
+
+            /* Price reference & live preview box */
+            .price-preview-bar {
+                margin-top: 2px;
+                padding: 11px 14px;
+                background-color: var(--bg-well);
+                border: 1px solid var(--border-control);
+                border-radius: 7px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+
+            .preview-label {
+                font-size: 0.825rem;
+                color: var(--text-secondary);
+                font-weight: 600;
+            }
+
+            .preview-amount {
+                font-size: 1.05rem;
+                font-weight: 800;
+                color: var(--text-primary);
+            }
+
+            /* Alert / Error Banner (R-27) */
+            .alert-banner {
+                padding: 10px 12px;
+                border-radius: 7px;
+                background-color: var(--danger-bg);
+                border: 1.5px solid var(--danger-border);
+                color: var(--danger-text);
+                font-size: 0.875rem;
+                font-weight: 600;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .hidden {
+                display: none !important;
+            }
+
+            .button-row {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                margin-top: 4px;
+            }
+
+            .btn {
+                min-height: 44px;
+                padding: 10px 16px;
+                border-radius: 7px;
+                font-size: 0.95rem;
+                font-weight: 700;
+                font-family: inherit;
+                border: 1.5px solid transparent;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                transition: background-color 0.15s ease, transform 0.1s ease;
+            }
+
+            .btn:active:not(:disabled) {
+                transform: translateY(1px);
+            }
+
+            .btn-primary {
+                background-color: var(--accent-bg);
+                color: var(--accent-text);
+            }
+
+            .btn-primary:hover:not(:disabled) {
+                background-color: var(--accent-bg-hover);
+            }
+
+            .btn-primary:active:not(:disabled) {
+                background-color: var(--accent-bg-active);
+            }
+
+            .btn-danger-outline {
+                background-color: var(--danger-bg);
+                color: var(--danger-text);
+                border-color: var(--danger-border);
+            }
+
+            .btn-danger-outline:hover:not(:disabled) {
+                background-color: var(--danger-hover);
+            }
+
+            .btn-secondary {
+                background-color: var(--bg-well);
+                color: var(--text-primary);
+                border-color: var(--border-control);
+            }
+
+            .btn-secondary:hover:not(:disabled) {
+                background-color: var(--bg-hover);
+            }
+
+            /* Summary Ledger Grid */
+            .right-column {
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .summary-grid {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+
+            .summary-box {
+                padding: 12px 14px;
+                border-radius: 8px;
+                border: 1.5px solid var(--border-control);
+                background-color: var(--bg-well);
+            }
+
+            .summary-box.box-belum {
+                background-color: var(--status-belum-bg);
+                border-color: var(--status-belum-border);
+                color: var(--status-belum-text);
+            }
+
+            .summary-box.box-lunas {
+                background-color: var(--status-lunas-bg);
+                border-color: var(--status-lunas-border);
+                color: var(--status-lunas-text);
+            }
+
+            .summary-box.box-cash {
+                background-color: var(--metode-cash-bg);
+                border-color: var(--metode-cash-border);
+                color: var(--metode-cash-text);
+            }
+
+            .summary-box.box-transfer {
+                background-color: var(--metode-transfer-bg);
+                border-color: var(--metode-transfer-border);
+                color: var(--metode-transfer-text);
+            }
+
+            .summary-label {
+                margin: 0;
+                font-size: 0.75rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+            }
+
+            .summary-value {
+                margin: 4px 0 0 0;
+                font-size: clamp(1rem, 2vw, 1.25rem);
+                font-weight: 800;
+            }
+
+            /* Tier Badge */
+            .tier-badge {
+                display: inline-block;
+                padding: 2px 8px;
+                border-radius: 4px;
+                font-size: 0.75rem;
+                font-weight: 700;
+                border: 1px solid var(--badge-reguler-border);
+                background-color: var(--badge-reguler-bg);
+                color: var(--badge-reguler-text);
+                margin-top: 3px;
+            }
+
+            .tier-badge.tier-premium {
+                background-color: var(--badge-premium-bg);
+                border-color: var(--badge-premium-border);
+                color: var(--badge-premium-text);
+            }
+
+            /* Inline Selects inside Table & Mobile Cards */
+            .inline-select {
+                min-height: 44px;
+                padding: 6px 32px 6px 10px;
+                border-radius: 6px;
+                border: 1.5px solid var(--border-control);
+                font-size: 0.85rem;
+                font-weight: 700;
+                font-family: inherit;
+                background-color: var(--bg-well);
+                color: var(--text-primary);
+                min-width: 118px;
             }
 
             .inline-select.status-lunas {
-                background-color: #dcfce7;
-                border-color: #86efac;
-                color: #166534;
+                background-color: var(--status-lunas-bg);
+                border-color: var(--status-lunas-border);
+                color: var(--status-lunas-text);
             }
 
             .inline-select.status-belum {
-                background-color: #fef3c7;
-                border-color: #fcd34d;
-                color: #92400e;
+                background-color: var(--status-belum-bg);
+                border-color: var(--status-belum-border);
+                color: var(--status-belum-text);
             }
 
             .inline-select.metode-cash {
-                background-color: #dbeafe;
-                border-color: #93c5fd;
-                color: #1e40af;
+                background-color: var(--metode-cash-bg);
+                border-color: var(--metode-cash-border);
+                color: var(--metode-cash-text);
             }
 
             .inline-select.metode-transfer {
-                background-color: #f3e8ff;
-                border-color: #c4b5fd;
-                color: #6b21a8;
+                background-color: var(--metode-transfer-bg);
+                border-color: var(--metode-transfer-border);
+                color: var(--metode-transfer-text);
             }
 
-            /* Table styles for desktop */
-            @media (min-width: 768px) {
-                .desktop-table {
-                    display: table;
-                }
-                .mobile-cards {
-                    display: none;
-                }
+            /* Action Buttons (44x44px minimum tap target, R-03) */
+            .action-group {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
             }
 
-            @media (max-width: 767px) {
-                .desktop-table {
-                    display: none;
-                }
-                .mobile-cards {
-                    display: block;
-                }
-            }
-
-            /* Smooth transitions */
-            .inline-select {
-                transition: all 0.2s ease;
-            }
-
-            /* Action buttons */
             .btn-action {
-                padding: 6px 10px;
+                min-width: 44px;
+                min-height: 44px;
+                padding: 8px;
                 border-radius: 6px;
-                font-size: 14px;
-                cursor: pointer;
-                transition: all 0.2s ease;
-                border: none;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                border: 1.5px solid transparent;
+                transition: background-color 0.15s ease;
             }
 
             .btn-edit {
-                background-color: #fef3c7;
-                color: #92400e;
+                background-color: var(--edit-bg);
+                border-color: var(--edit-border);
+                color: var(--edit-text);
             }
 
             .btn-edit:hover {
-                background-color: #fde68a;
+                background-color: var(--edit-hover);
             }
 
             .btn-delete {
-                background-color: #fee2e2;
-                color: #dc2626;
+                background-color: var(--danger-bg);
+                border-color: var(--danger-border);
+                color: var(--danger-text);
             }
 
             .btn-delete:hover {
-                background-color: #fecaca;
+                background-color: var(--danger-hover);
             }
 
-            /* Inline edit input */
-            .inline-input {
-                width: 60px;
-                padding: 6px 8px;
-                border-radius: 6px;
-                border: 2px solid #3b82f6;
-                font-size: 14px;
+            /* Table for >= 640px */
+            .ledger-table-wrap {
+                width: 100%;
+                overflow-x: auto;
+            }
+
+            .ledger-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 0.9rem;
+            }
+
+            .ledger-table th {
+                background-color: var(--bg-well);
+                color: var(--text-primary);
+                font-size: 0.75rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+                padding: 10px 12px;
+                border-bottom: 1.5px solid var(--border-control);
+                text-align: left;
+            }
+
+            .ledger-table th.col-center,
+            .ledger-table td.col-center {
                 text-align: center;
-                background-color: #eff6ff;
             }
 
-            .inline-input:focus {
-                outline: none;
-                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+            .ledger-table th.col-right,
+            .ledger-table td.col-right {
+                text-align: right;
             }
 
-            /* Modal */
+            .ledger-table td {
+                padding: 12px;
+                border-bottom: 1px solid var(--border-subtle);
+                vertical-align: middle;
+            }
+
+            .ledger-table tbody tr:hover {
+                background-color: var(--bg-hover);
+            }
+
+            /* Mobile Transaction Cards (< 640px) */
+            .transaction-card {
+                background-color: var(--bg-card);
+                border-radius: 8px;
+                padding: 14px;
+                margin-bottom: 12px;
+                border: 1.5px solid var(--border-subtle);
+            }
+
+            .transaction-card:last-child {
+                margin-bottom: 0;
+            }
+
+            .card-top {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                gap: 12px;
+                margin-bottom: 12px;
+            }
+
+            .card-buyer-name {
+                margin: 0;
+                font-size: 1.05rem;
+                font-weight: 700;
+                color: var(--text-primary);
+            }
+
+            .card-meta {
+                margin: 2px 0 0 0;
+                font-size: 0.85rem;
+                color: var(--text-secondary);
+            }
+
+            .card-controls-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+                padding-top: 10px;
+                border-top: 1px solid var(--border-subtle);
+            }
+
+            .card-field-label {
+                display: block;
+                font-size: 0.75rem;
+                font-weight: 700;
+                color: var(--text-secondary);
+                text-transform: uppercase;
+                margin-bottom: 4px;
+            }
+
+            /* Empty & Loading States (R-27) */
+            .state-box {
+                padding: 28px 16px;
+                text-align: center;
+                color: var(--text-secondary);
+                font-size: 0.925rem;
+                border: 1px dashed var(--border-control);
+                border-radius: 8px;
+                background-color: var(--bg-well);
+            }
+
+            .state-box p {
+                margin: 0;
+            }
+
+            /* Modals (R-26, R-32) */
             .modal-overlay {
                 position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background-color: rgba(0, 0, 0, 0.5);
+                inset: 0;
+                background-color: rgba(18, 22, 20, 0.65);
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -172,299 +701,406 @@
             }
 
             .modal-content {
-                background: white;
-                border-radius: 16px;
-                padding: 24px;
+                background-color: var(--bg-card);
+                color: var(--text-primary);
+                border: 1.5px solid var(--border-control);
+                border-radius: 12px;
+                padding: 20px;
                 width: 100%;
-                max-width: 320px;
-                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+                max-width: 380px;
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25);
             }
 
-            .modal-hidden {
-                display: none;
+            .modal-title {
+                margin: 0 0 12px 0;
+                font-size: 1.125rem;
+                font-weight: 800;
+            }
+
+            .modal-actions {
+                display: flex;
+                gap: 10px;
+                margin-top: 16px;
+            }
+
+            .modal-actions .btn {
+                flex: 1;
+            }
+
+            .app-footer {
+                width: 100%;
+                max-width: 1120px;
+                margin: 0 auto;
+                padding: 12px 16px 24px;
+                font-size: 0.8rem;
+                color: var(--text-secondary);
+                display: flex;
+                justify-content: space-between;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            /* State 1: Phone (< 640px) */
+            @media (max-width: 639px) {
+                .desktop-table {
+                    display: none;
+                }
+                .mobile-cards {
+                    display: block;
+                }
+            }
+
+            /* State 2: Tablet (640px - 959px) */
+            @media (min-width: 640px) {
+                .app-shell {
+                    padding: 24px;
+                }
+                .desktop-table {
+                    display: block;
+                }
+                .mobile-cards {
+                    display: none;
+                }
+                .form-grid {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+                .field-span-2 {
+                    grid-column: span 2;
+                }
+                .button-row {
+                    flex-direction: row;
+                }
+                .button-row .btn {
+                    flex: 1;
+                }
+                .summary-grid {
+                    grid-template-columns: repeat(4, 1fr);
+                }
+            }
+
+            /* State 3: Desktop Split Ledger (>= 960px) */
+            @media (min-width: 960px) {
+                .workspace-grid {
+                    grid-template-columns: 360px 1fr;
+                    gap: 24px;
+                }
+                .form-grid {
+                    grid-template-columns: 1fr;
+                }
+                .field-span-2 {
+                    grid-column: span 1;
+                }
+                .sticky-panel {
+                    position: sticky;
+                    top: 20px;
+                }
             }
         </style>
     </head>
-    <body class="bg-gray-100 min-h-screen">
-        <div class="max-w-2xl mx-auto p-4 sm:p-6">
-            <div class="bg-white p-5 sm:p-6 rounded-xl shadow-lg">
-                <h1
-                    class="text-2xl sm:text-3xl font-bold text-center text-gray-800 mb-6"
-                >
-                    myDuren
-                </h1>
+    <body>
+        <div class="app-shell">
+            <header class="app-header">
+                <div class="brand-group">
+                    <h1 class="app-title">myDuren</h1>
+                    <div class="stock-pill" aria-live="polite">
+                        <span>Sisa Stok:</span>
+                        <strong id="headerStokBadge" class="num">100</strong>
+                        <span>box</span>
+                    </div>
+                </div>
+                <div class="header-controls">
+                    <button
+                        type="button"
+                        id="themeToggleBtn"
+                        class="theme-btn"
+                        aria-label="Ganti tema tampilan"
+                    >
+                        <svg
+                            id="themeIconSun"
+                            class="hidden"
+                            aria-hidden="true"
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <circle cx="12" cy="12" r="4"></circle>
+                            <path d="M12 2v2"></path>
+                            <path d="M12 20v2"></path>
+                            <path d="m4.93 4.93 1.41 1.41"></path>
+                            <path d="m17.66 17.66 1.41 1.41"></path>
+                            <path d="M2 12h2"></path>
+                            <path d="M20 12h2"></path>
+                            <path d="m6.34 17.66-1.41 1.41"></path>
+                            <path d="m19.07 4.93-1.41 1.41"></path>
+                        </svg>
+                        <svg
+                            id="themeIconMoon"
+                            aria-hidden="true"
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+                        </svg>
+                        <span id="themeToggleLabel">Mode Gelap</span>
+                    </button>
+                </div>
+            </header>
 
-                <!-- Form Input -->
-                <div class="space-y-4">
-                    <div>
-                        <label
-                            class="block text-sm font-medium text-gray-700 mb-1"
-                            >Stok Awal (box):</label
-                        >
-                        <input
-                            type="number"
-                            id="stokAwal"
-                            value="100"
-                            class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
-                        />
-                    </div>
-                    <div>
-                        <label
-                            class="block text-sm font-medium text-gray-700 mb-1"
-                            >Nama Pembeli:</label
-                        >
-                        <input
-                            type="text"
-                            id="namaPembeli"
-                            placeholder="Masukkan nama pembeli"
-                            class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
-                        />
-                    </div>
-                    <div>
-                        <label
-                            class="block text-sm font-medium text-gray-700 mb-1"
-                            >Jumlah Box Terjual:</label
-                        >
-                        <input
-                            type="number"
-                            id="jumlahTerjual"
-                            placeholder="Masukkan jumlah box terjual"
-                            class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
-                        />
-                    </div>
-                    <div>
-                        <label
-                            class="block text-sm font-medium text-gray-700 mb-1"
-                            >Jenis Pembeli:</label
-                        >
-                        <select
-                            id="jenisPembeli"
-                            class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
-                        >
-                            <option value="reguler">
-                                Reguler (Rp 35.000/box)
-                            </option>
-                            <option value="reseller">
-                                Reseller (Rp 30.000/box)
-                            </option>
-                        </select>
-                    </div>
-                    <div>
-                        <label
-                            class="block text-sm font-medium text-gray-700 mb-1"
-                            >Status Pembayaran:</label
-                        >
-                        <select
-                            id="statusPembayaran"
-                            class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
-                        >
-                            <option value="lunas">Lunas</option>
-                            <option value="belum lunas">Belum Lunas</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label
-                            class="block text-sm font-medium text-gray-700 mb-1"
-                            >Metode Pembayaran:</label
-                        >
-                        <select
-                            id="metodePembayaran"
-                            class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
-                        >
-                            <option value="cash">Cash</option>
-                            <option value="transfer">Transfer</option>
-                        </select>
-                    </div>
-                    <div class="flex flex-col sm:flex-row gap-3 pt-2">
-                        <button
-                            id="hitungButton"
-                            class="flex-1 bg-blue-500 text-white px-4 py-3 rounded-lg font-semibold hover:bg-blue-600 active:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors text-base"
-                        >
-                            Tambah Penjualan
-                        </button>
-                        <button
-                            id="resetButton"
-                            class="flex-1 bg-red-500 text-white px-4 py-3 rounded-lg font-semibold hover:bg-red-600 active:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors text-base"
-                        >
-                            Reset Semua
-                        </button>
-                    </div>
-                </div>
-            </div>
+            <main class="workspace-grid">
+                <!-- Panel Input Kasir -->
+                <section class="card-panel sticky-panel" aria-labelledby="formHeading">
+                    <h2 id="formHeading" class="section-title">Input Penjualan</h2>
 
-            <!-- Tabel Penjualan - Desktop -->
-            <div
-                class="mt-6 bg-white rounded-xl shadow-lg overflow-hidden desktop-table"
-            >
-                <div class="px-5 py-4 border-b border-gray-200">
-                    <h2 class="text-lg font-semibold text-gray-800">
-                        Daftar Penjualan
-                    </h2>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead>
-                            <tr class="bg-gray-50">
-                                <th
-                                    class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
-                                >
-                                    Nama
-                                </th>
-                                <th
-                                    class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider"
-                                >
-                                    Box
-                                </th>
-                                <th
-                                    class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider"
-                                >
-                                    Total
-                                </th>
-                                <th
-                                    class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider"
-                                >
-                                    Status
-                                </th>
-                                <th
-                                    class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider"
-                                >
-                                    Metode
-                                </th>
-                                <th
-                                    class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider"
-                                >
-                                    Edit
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody
-                            id="tabelPenjualan"
-                            class="divide-y divide-gray-200"
-                        ></tbody>
-                    </table>
-                </div>
-                <div
-                    id="emptyStateDesktop"
-                    class="px-5 py-8 text-center text-gray-400 hidden"
-                >
-                    Belum ada transaksi
-                </div>
-            </div>
+                    <div id="formError" class="alert-banner hidden" role="alert">
+                        <span id="formErrorText"></span>
+                    </div>
 
-            <!-- Kartu Penjualan - Mobile -->
-            <div class="mt-6 mobile-cards">
-                <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-4">
-                    <div class="px-5 py-4 border-b border-gray-200">
-                        <h2 class="text-lg font-semibold text-gray-800">
-                            📋 Daftar Penjualan
+                    <div class="form-grid">
+                        <div class="field-group">
+                            <label for="stokAwal" class="field-label">Stok Box Saat Ini</label>
+                            <input
+                                type="number"
+                                id="stokAwal"
+                                value="100"
+                                min="0"
+                                class="form-control num"
+                            />
+                        </div>
+
+                        <div class="field-group">
+                            <label for="namaPembeli" class="field-label">Nama Pembeli</label>
+                            <input
+                                type="text"
+                                id="namaPembeli"
+                                placeholder="Contoh: Budi"
+                                autocomplete="off"
+                                class="form-control"
+                            />
+                        </div>
+
+                        <div class="field-group">
+                            <label for="jenisPembeli" class="field-label">Varian &amp; Kategori Harga</label>
+                            <select id="jenisPembeli" class="form-control">
+                                <option value="reguler">
+                                    Reguler (Rp 35.000/box · 3 box Rp 100.000)
+                                </option>
+                                <option value="premium">
+                                    Premium (Rp 40.000/box · 3 box Rp 110.000)
+                                </option>
+                                <option value="reseller">
+                                    Reseller Reguler (Rp 30.000/box)
+                                </option>
+                                <option value="reseller_premium">
+                                    Reseller Premium (Rp 34.000/box)
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="field-group">
+                            <label for="jumlahTerjual" class="field-label">Jumlah Box Terjual</label>
+                            <input
+                                type="number"
+                                id="jumlahTerjual"
+                                placeholder="Masukkan jumlah box"
+                                min="1"
+                                class="form-control num"
+                            />
+                        </div>
+
+                        <div class="field-group">
+                            <label for="statusPembayaran" class="field-label">Status Pembayaran</label>
+                            <select id="statusPembayaran" class="form-control">
+                                <option value="lunas">Lunas</option>
+                                <option value="belum lunas">Belum Lunas</option>
+                            </select>
+                        </div>
+
+                        <div class="field-group">
+                            <label for="metodePembayaran" class="field-label">Metode Pembayaran</label>
+                            <select id="metodePembayaran" class="form-control">
+                                <option value="cash">Cash</option>
+                                <option value="transfer">Transfer</option>
+                            </select>
+                        </div>
+
+                        <div class="field-group field-span-2">
+                            <div class="price-preview-bar" aria-live="polite">
+                                <span id="previewNote" class="preview-label">Harga satuan: Rp 35.000/box (3 box Rp 100.000)</span>
+                                <span id="previewTotal" class="preview-amount num">Rp 0</span>
+                            </div>
+                        </div>
+
+                        <div class="button-row field-span-2">
+                            <button type="button" id="hitungButton" class="btn btn-primary">
+                                Tambah Penjualan
+                            </button>
+                            <button type="button" id="resetButton" class="btn btn-danger-outline">
+                                Reset Semua
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Kolom Kanan: Total Keuangan & Daftar Transaksi -->
+                <div class="right-column">
+                    <section class="card-panel" aria-labelledby="keuanganHeading">
+                        <h2 id="keuanganHeading" class="section-title">Total Keuangan</h2>
+                        <div class="summary-grid">
+                            <div class="summary-box box-belum">
+                                <p class="summary-label">Belum Lunas</p>
+                                <p class="summary-value num">
+                                    Rp <span id="totalBelumLunas">0</span>
+                                </p>
+                            </div>
+                            <div class="summary-box box-lunas">
+                                <p class="summary-label">Lunas</p>
+                                <p class="summary-value num">
+                                    Rp <span id="totalLunas">0</span>
+                                </p>
+                            </div>
+                            <div class="summary-box box-cash">
+                                <p class="summary-label">Cash</p>
+                                <p class="summary-value num">
+                                    Rp <span id="totalCash">0</span>
+                                </p>
+                            </div>
+                            <div class="summary-box box-transfer">
+                                <p class="summary-label">Transfer</p>
+                                <p class="summary-value num">
+                                    Rp <span id="totalTransfer">0</span>
+                                </p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="card-panel" aria-labelledby="daftarHeading">
+                        <h2 id="daftarHeading" class="section-title">
+                            <span>Daftar Penjualan</span>
+                            <span id="totalBoxTerjualLabel" class="preview-label num">0 box terjual</span>
                         </h2>
-                    </div>
-                </div>
-                <div id="cardPenjualan"></div>
-                <div
-                    id="emptyStateMobile"
-                    class="bg-white rounded-xl shadow-lg px-5 py-8 text-center text-gray-400 hidden"
-                >
-                    Belum ada transaksi
-                </div>
-            </div>
 
-            <!-- Total Keuangan -->
-            <div class="mt-6 bg-white rounded-xl shadow-lg p-5">
-                <h2 class="text-lg font-semibold text-gray-800 mb-4">
-                    Total Keuangan
-                </h2>
-                <div class="grid grid-cols-2 gap-4">
-                    <div
-                        class="bg-yellow-50 rounded-lg p-4 border border-yellow-200"
-                    >
-                        <p
-                            class="text-xs font-medium text-yellow-700 uppercase tracking-wide"
-                        >
-                            Belum Lunas
-                        </p>
-                        <p class="text-xl font-bold text-yellow-800 mt-1">
-                            Rp <span id="totalBelumLunas">0</span>
-                        </p>
-                    </div>
-                    <div
-                        class="bg-green-50 rounded-lg p-4 border border-green-200"
-                    >
-                        <p
-                            class="text-xs font-medium text-green-700 uppercase tracking-wide"
-                        >
-                            Lunas
-                        </p>
-                        <p class="text-xl font-bold text-green-800 mt-1">
-                            Rp <span id="totalLunas">0</span>
-                        </p>
-                    </div>
-                    <div
-                        class="bg-blue-50 rounded-lg p-4 border border-blue-200"
-                    >
-                        <p
-                            class="text-xs font-medium text-blue-700 uppercase tracking-wide"
-                        >
-                            Cash
-                        </p>
-                        <p class="text-xl font-bold text-blue-800 mt-1">
-                            Rp <span id="totalCash">0</span>
-                        </p>
-                    </div>
-                    <div
-                        class="bg-purple-50 rounded-lg p-4 border border-purple-200"
-                    >
-                        <p
-                            class="text-xs font-medium text-purple-700 uppercase tracking-wide"
-                        >
-                            Transfer
-                        </p>
-                        <p class="text-xl font-bold text-purple-800 mt-1">
-                            Rp <span id="totalTransfer">0</span>
-                        </p>
-                    </div>
+                        <div id="loadingState" class="state-box">
+                            <p>Memuat data transaksi...</p>
+                        </div>
+
+                        <!-- Tabel Desktop & Tablet -->
+                        <div class="desktop-table">
+                            <div id="tableContainer" class="ledger-table-wrap">
+                                <table class="ledger-table">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Pembeli &amp; Varian</th>
+                                            <th scope="col" class="col-center">Box</th>
+                                            <th scope="col" class="col-right">Total</th>
+                                            <th scope="col" class="col-center">Status</th>
+                                            <th scope="col" class="col-center">Metode</th>
+                                            <th scope="col" class="col-center">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabelPenjualan"></tbody>
+                                </table>
+                            </div>
+                            <div id="emptyStateDesktop" class="state-box hidden">
+                                <p>Belum ada transaksi. Isi form di samping untuk mencatat penjualan.</p>
+                            </div>
+                        </div>
+
+                        <!-- Kartu Mobile -->
+                        <div class="mobile-cards">
+                            <div id="cardPenjualan"></div>
+                            <div id="emptyStateMobile" class="state-box hidden">
+                                <p>Belum ada transaksi. Isi form di atas untuk mencatat penjualan.</p>
+                            </div>
+                        </div>
+                    </section>
                 </div>
-            </div>
+            </main>
         </div>
 
-        <!-- Modal Edit -->
-        <div id="editModal" class="modal-overlay modal-hidden">
+        <footer class="app-footer">
+            <span>myDuren</span>
+            <span class="num">Reguler 35k (3 box 100k) · Premium 40k (3 box 110k) · Reseller 30k / 34k</span>
+        </footer>
+
+        <!-- Modal Edit Transaksi -->
+        <div
+            id="editModal"
+            class="modal-overlay hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="editModalTitle"
+        >
             <div class="modal-content">
-                <h3 class="text-lg font-bold text-gray-800 mb-4">
-                    Edit Jumlah Box
-                </h3>
-                <div class="mb-4">
-                    <p class="text-sm text-gray-600 mb-1">
-                        Pembeli:
-                        <span
-                            id="editNama"
-                            class="font-semibold text-gray-800"
-                        ></span>
-                    </p>
+                <h3 id="editModalTitle" class="modal-title">Edit Transaksi</h3>
+                <p style="margin: 0 0 12px 0; font-size: 0.9rem; color: var(--text-secondary);">
+                    Pembeli: <strong id="editNama" style="color: var(--text-primary);"></strong>
+                </p>
+
+                <div id="editError" class="alert-banner hidden" role="alert" style="margin-bottom: 12px;">
+                    <span id="editErrorText"></span>
                 </div>
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2"
-                        >Jumlah Box Baru:</label
-                    >
+
+                <div class="field-group" style="margin-bottom: 12px;">
+                    <label for="editJenisSelect" class="field-label">Varian &amp; Kategori Harga</label>
+                    <select id="editJenisSelect" class="form-control">
+                        <option value="reguler">Reguler (Rp 35.000/box · 3 box Rp 100.000)</option>
+                        <option value="premium">Premium (Rp 40.000/box · 3 box Rp 110.000)</option>
+                        <option value="reseller">Reseller Reguler (Rp 30.000/box)</option>
+                        <option value="reseller_premium">Reseller Premium (Rp 34.000/box)</option>
+                    </select>
+                </div>
+
+                <div class="field-group">
+                    <label for="editJumlahInput" class="field-label">Jumlah Box Baru</label>
                     <input
                         type="number"
                         id="editJumlahInput"
                         min="1"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-base text-center"
+                        class="form-control num"
                     />
                 </div>
-                <div class="flex gap-3">
-                    <button
-                        id="cancelEditBtn"
-                        class="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
-                    >
+
+                <div class="modal-actions">
+                    <button type="button" id="cancelEditBtn" class="btn btn-secondary">
                         Batal
                     </button>
-                    <button
-                        id="saveEditBtn"
-                        class="flex-1 px-4 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition-colors"
-                    >
+                    <button type="button" id="saveEditBtn" class="btn btn-primary">
                         Simpan
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Konfirmasi (Hapus / Reset) -->
+        <div
+            id="confirmModal"
+            class="modal-overlay hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="confirmModalTitle"
+        >
+            <div class="modal-content">
+                <h3 id="confirmModalTitle" class="modal-title">Konfirmasi</h3>
+                <p id="confirmModalMessage" style="margin: 0; font-size: 0.925rem; color: var(--text-secondary);"></p>
+                <div class="modal-actions">
+                    <button type="button" id="cancelConfirmBtn" class="btn btn-secondary">
+                        Batal
+                    </button>
+                    <button type="button" id="okConfirmBtn" class="btn btn-danger-outline">
+                        Ya, Lanjutkan
                     </button>
                 </div>
             </div>

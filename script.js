@@ -1,9 +1,83 @@
-// Konfigurasi
 const HARGA = {
     REGULER: 35000,
+    PAKET_3BOX_REGULER: 100000,
+    PREMIUM: 40000,
+    PAKET_3BOX_PREMIUM: 110000,
     RESELLER: 30000,
-    PAKET_3BOX: 100000,
+    RESELLER_PREMIUM: 34000,
 };
+
+const JENIS_LABEL = {
+    reguler: 'Reguler',
+    premium: 'Premium',
+    reseller: 'Reseller Reguler',
+    reseller_premium: 'Reseller Premium',
+};
+
+function hitungTotalHarga(jenis, jumlah) {
+    if (!Number.isInteger(jumlah) || jumlah < 1) return 0;
+
+    if (jenis === 'premium') {
+        // Promo paket 3 box berlaku untuk pembeli umum varian Premium.
+        const paket = Math.floor(jumlah / 3);
+        const sisa = jumlah % 3;
+        return paket * HARGA.PAKET_3BOX_PREMIUM + sisa * HARGA.PREMIUM;
+    }
+
+    if (jenis === 'reseller') {
+        return jumlah * HARGA.RESELLER;
+    }
+
+    if (jenis === 'reseller_premium') {
+        return jumlah * HARGA.RESELLER_PREMIUM;
+    }
+
+    // Default ke Reguler (termasuk promo 3 box Rp 100.000).
+    const paket = Math.floor(jumlah / 3);
+    const sisa = jumlah % 3;
+    return paket * HARGA.PAKET_3BOX_REGULER + sisa * HARGA.REGULER;
+}
+
+function getInfoTarif(jenis, jumlah) {
+    const qty = Number.isInteger(jumlah) && jumlah > 0 ? jumlah : 0;
+
+    if (jenis === 'premium') {
+        if (qty >= 3) {
+            const paket = Math.floor(qty / 3);
+            const sisa = qty % 3;
+            return sisa > 0
+                ? `Premium: ${paket} paket 3-box + ${sisa} satuan`
+                : `Premium: ${paket} paket 3-box (Rp 110.000/paket)`;
+        }
+        return 'Harga satuan: Rp 40.000/box (3 box Rp 110.000)';
+    }
+
+    if (jenis === 'reseller') {
+        return 'Harga Reseller Reguler: Rp 30.000/box';
+    }
+
+    if (jenis === 'reseller_premium') {
+        return 'Harga Reseller Premium: Rp 34.000/box';
+    }
+
+    if (qty >= 3) {
+        const paket = Math.floor(qty / 3);
+        const sisa = qty % 3;
+        return sisa > 0
+            ? `Reguler: ${paket} paket 3-box + ${sisa} satuan`
+            : `Reguler: ${paket} paket 3-box (Rp 100.000/paket)`;
+    }
+    return 'Harga satuan: Rp 35.000/box (3 box Rp 100.000)';
+}
+
+function escapeHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
 
 class StateManager {
     constructor() {
@@ -18,250 +92,357 @@ class StateManager {
             },
         };
         this.editingIndex = null;
+        this.confirmCallback = null;
+        this.lastFocusedElement = null;
     }
 
     init() {
+        this.initTheme();
         this.loadState();
         this.setupEventListeners();
         this.setupTableHandlers();
         this.setupModalHandlers();
+        this.syncMetodeWithStatus();
+        this.updatePricePreview();
+        document.getElementById('loadingState').classList.add('hidden');
         this.updateUI();
     }
 
+    initTheme() {
+        const savedTheme = localStorage.getItem('myDurenTheme') || 'light';
+        this.applyTheme(savedTheme);
+    }
+
+    applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('myDurenTheme', theme);
+
+        const sunIcon = document.getElementById('themeIconSun');
+        const moonIcon = document.getElementById('themeIconMoon');
+        const label = document.getElementById('themeToggleLabel');
+
+        if (theme === 'dark') {
+            sunIcon.classList.remove('hidden');
+            moonIcon.classList.add('hidden');
+            label.textContent = 'Mode Terang';
+        } else {
+            sunIcon.classList.add('hidden');
+            moonIcon.classList.remove('hidden');
+            label.textContent = 'Mode Gelap';
+        }
+    }
+
     setupEventListeners() {
-        document
-            .getElementById('hitungButton')
-            .addEventListener('click', () => this.handleHitung());
-        document
-            .getElementById('resetButton')
-            .addEventListener('click', () => this.handleReset());
+        document.getElementById('themeToggleBtn').addEventListener('click', () => {
+            const current = document.documentElement.getAttribute('data-theme');
+            this.applyTheme(current === 'dark' ? 'light' : 'dark');
+        });
+
+        document.getElementById('hitungButton').addEventListener('click', () => this.handleHitung());
+        document.getElementById('resetButton').addEventListener('click', () => this.handleReset());
+
+        document.getElementById('jenisPembeli').addEventListener('change', () => {
+            this.hideFormError();
+            this.updatePricePreview();
+        });
+
+        document.getElementById('jumlahTerjual').addEventListener('input', () => {
+            this.hideFormError();
+            this.updatePricePreview();
+        });
+
+        document.getElementById('namaPembeli').addEventListener('input', () => {
+            this.hideFormError();
+        });
+
+        document.getElementById('stokAwal').addEventListener('change', (e) => {
+            const val = parseInt(e.target.value, 10);
+            if (!isNaN(val) && val >= 0) {
+                this.state.stok = val;
+                this.saveState();
+                this.updateUI();
+            }
+        });
+
+        document.getElementById('statusPembayaran').addEventListener('change', () => {
+            this.syncMetodeWithStatus();
+        });
+    }
+
+    syncMetodeWithStatus() {
+        const status = document.getElementById('statusPembayaran').value;
+        const metodeSelect = document.getElementById('metodePembayaran');
+        metodeSelect.disabled = status === 'belum lunas';
+    }
+
+    updatePricePreview() {
+        const jenis = document.getElementById('jenisPembeli').value;
+        const jumlah = parseInt(document.getElementById('jumlahTerjual').value, 10);
+        const total = hitungTotalHarga(jenis, jumlah);
+
+        document.getElementById('previewNote').textContent = getInfoTarif(jenis, jumlah);
+        document.getElementById('previewTotal').textContent = `Rp ${total.toLocaleString('id-ID')}`;
+    }
+
+    showFormError(msg) {
+        const banner = document.getElementById('formError');
+        document.getElementById('formErrorText').textContent = msg;
+        banner.classList.remove('hidden');
+    }
+
+    hideFormError() {
+        document.getElementById('formError').classList.add('hidden');
+    }
+
+    showEditError(msg) {
+        const banner = document.getElementById('editError');
+        document.getElementById('editErrorText').textContent = msg;
+        banner.classList.remove('hidden');
+    }
+
+    hideEditError() {
+        document.getElementById('editError').classList.add('hidden');
     }
 
     setupTableHandlers() {
-        // Event delegation untuk select dan button di tabel dan kartu
         document.addEventListener('change', (e) => {
             if (e.target.classList.contains('status-select')) {
-                const index = parseInt(e.target.dataset.index);
+                const index = parseInt(e.target.dataset.index, 10);
                 this.changeStatus(index, e.target.value);
             } else if (e.target.classList.contains('metode-select')) {
-                const index = parseInt(e.target.dataset.index);
+                const index = parseInt(e.target.dataset.index, 10);
                 this.changeMetode(index, e.target.value);
             }
         });
 
         document.addEventListener('click', (e) => {
-            // Handle delete button
-            if (e.target.closest('.delete-btn')) {
-                const btn = e.target.closest('.delete-btn');
-                const index = parseInt(btn.dataset.index);
-                this.handleDelete(index);
+            const deleteBtn = e.target.closest('.delete-btn');
+            if (deleteBtn) {
+                const index = parseInt(deleteBtn.dataset.index, 10);
+                this.handleDelete(index, deleteBtn);
+                return;
             }
-            // Handle edit button
-            if (e.target.closest('.edit-btn')) {
-                const btn = e.target.closest('.edit-btn');
-                const index = parseInt(btn.dataset.index);
-                this.openEditModal(index);
+
+            const editBtn = e.target.closest('.edit-btn');
+            if (editBtn) {
+                const index = parseInt(editBtn.dataset.index, 10);
+                this.openEditModal(index, editBtn);
             }
         });
     }
 
     setupModalHandlers() {
-        const modal = document.getElementById('editModal');
-        const cancelBtn = document.getElementById('cancelEditBtn');
-        const saveBtn = document.getElementById('saveEditBtn');
+        const editModal = document.getElementById('editModal');
+        const confirmModal = document.getElementById('confirmModal');
 
-        cancelBtn.addEventListener('click', () => this.closeEditModal());
-        saveBtn.addEventListener('click', () => this.saveEdit());
+        document.getElementById('cancelEditBtn').addEventListener('click', () => this.closeEditModal());
+        document.getElementById('saveEditBtn').addEventListener('click', () => this.saveEdit());
 
-        // Close modal when clicking outside
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                this.closeEditModal();
-            }
+        editModal.addEventListener('click', (e) => {
+            if (e.target === editModal) this.closeEditModal();
         });
 
-        // Handle Enter key in input
         document.getElementById('editJumlahInput').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                this.saveEdit();
+            if (e.key === 'Enter') this.saveEdit();
+        });
+
+        document.getElementById('cancelConfirmBtn').addEventListener('click', () => this.closeConfirmModal());
+        document.getElementById('okConfirmBtn').addEventListener('click', () => {
+            if (typeof this.confirmCallback === 'function') {
+                this.confirmCallback();
+            }
+            this.closeConfirmModal();
+        });
+
+        confirmModal.addEventListener('click', (e) => {
+            if (e.target === confirmModal) this.closeConfirmModal();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (!editModal.classList.contains('hidden')) {
+                    this.closeEditModal();
+                } else if (!confirmModal.classList.contains('hidden')) {
+                    this.closeConfirmModal();
+                }
             }
         });
     }
 
-    openEditModal(index) {
+    openConfirmModal(title, message, onConfirm, triggerEl = null) {
+        this.lastFocusedElement = triggerEl || document.activeElement;
+        this.confirmCallback = onConfirm;
+        document.getElementById('confirmModalTitle').textContent = title;
+        document.getElementById('confirmModalMessage').textContent = message;
+        document.getElementById('confirmModal').classList.remove('hidden');
+        document.getElementById('okConfirmBtn').focus();
+    }
+
+    closeConfirmModal() {
+        document.getElementById('confirmModal').classList.add('hidden');
+        this.confirmCallback = null;
+        if (this.lastFocusedElement && typeof this.lastFocusedElement.focus === 'function') {
+            this.lastFocusedElement.focus();
+        }
+    }
+
+    openEditModal(index, triggerEl = null) {
         const trx = this.state.transactions[index];
+        if (!trx) return;
+
+        this.lastFocusedElement = triggerEl || document.activeElement;
         this.editingIndex = index;
+        this.hideEditError();
 
         document.getElementById('editNama').textContent = trx.nama;
+        document.getElementById('editJenisSelect').value = trx.jenis || 'reguler';
         document.getElementById('editJumlahInput').value = trx.jumlah;
-        document.getElementById('editModal').classList.remove('modal-hidden');
+        document.getElementById('editModal').classList.remove('hidden');
         document.getElementById('editJumlahInput').focus();
         document.getElementById('editJumlahInput').select();
     }
 
     closeEditModal() {
-        document.getElementById('editModal').classList.add('modal-hidden');
+        document.getElementById('editModal').classList.add('hidden');
         this.editingIndex = null;
+        this.hideEditError();
+        if (this.lastFocusedElement && typeof this.lastFocusedElement.focus === 'function') {
+            this.lastFocusedElement.focus();
+        }
+    }
+
+    recalculateTotals() {
+        const totals = {
+            belumLunas: 0,
+            lunas: 0,
+            cash: 0,
+            transfer: 0,
+        };
+
+        for (const trx of this.state.transactions) {
+            if (trx.status === 'lunas') {
+                totals.lunas += trx.total;
+                if (trx.metode === 'cash' || trx.metode === 'transfer') {
+                    totals[trx.metode] += trx.total;
+                }
+            } else {
+                totals.belumLunas += trx.total;
+            }
+        }
+
+        this.state.totals = totals;
     }
 
     saveEdit() {
-        const newJumlah = parseInt(document.getElementById('editJumlahInput').value);
-        
+        const newJumlah = parseInt(document.getElementById('editJumlahInput').value, 10);
+        const newJenis = document.getElementById('editJenisSelect').value;
+
         if (isNaN(newJumlah) || newJumlah < 1) {
-            alert('Jumlah box harus minimal 1!');
+            this.showEditError('Jumlah box minimal 1.');
             return;
         }
 
         const index = this.editingIndex;
         const trx = this.state.transactions[index];
-        const oldJumlah = trx.jumlah;
-        const diff = newJumlah - oldJumlah;
+        if (!trx) return;
 
-        // Check stok
+        const diff = newJumlah - trx.jumlah;
+
         if (diff > 0 && diff > this.state.stok) {
-            alert('Stok tidak mencukupi!');
+            this.showEditError(`Stok tidak cukup. Sisa stok: ${this.state.stok} box.`);
             return;
         }
 
-        // Recalculate total based on jenis
-        const oldTotal = trx.total;
-        let newTotal = 0;
-
-        if (trx.jenis === 'reseller') {
-            newTotal = newJumlah * HARGA.RESELLER;
-        } else {
-            // Reguler dengan promo 3 box
-            const promo3Box = Math.floor(newJumlah / 3);
-            const sisaBox = newJumlah % 3;
-            newTotal = promo3Box * HARGA.PAKET_3BOX + sisaBox * HARGA.REGULER;
-        }
-
-        // Update totals
-        const totalDiff = newTotal - oldTotal;
-
-        if (trx.status === 'lunas') {
-            this.state.totals.lunas += totalDiff;
-            this.state.totals[trx.metode] += totalDiff;
-        } else {
-            this.state.totals.belumLunas += totalDiff;
-        }
-
-        // Update transaction
         trx.jumlah = newJumlah;
-        trx.total = newTotal;
-
-        // Update stok
+        trx.jenis = newJenis;
+        trx.total = hitungTotalHarga(newJenis, newJumlah);
         this.state.stok -= diff;
 
+        this.recalculateTotals();
         this.saveState();
         this.updateUI();
         this.closeEditModal();
     }
 
-    handleDelete(index) {
+    handleDelete(index, triggerEl) {
         const trx = this.state.transactions[index];
-        
-        if (!confirm(`Hapus transaksi "${trx.nama}" (${trx.jumlah} box)?`)) {
-            return;
-        }
+        if (!trx) return;
 
-        // Update totals
-        if (trx.status === 'lunas') {
-            this.state.totals.lunas -= trx.total;
-            this.state.totals[trx.metode] -= trx.total;
-        } else {
-            this.state.totals.belumLunas -= trx.total;
-        }
-
-        // Return stock
-        this.state.stok += trx.jumlah;
-
-        // Remove transaction
-        this.state.transactions.splice(index, 1);
-
-        this.saveState();
-        this.updateUI();
+        this.openConfirmModal(
+            'Hapus Transaksi',
+            `Hapus catatan pembelian "${trx.nama}" (${trx.jumlah} box)? Stok akan dikembalikan.`,
+            () => {
+                this.state.stok += trx.jumlah;
+                this.state.transactions.splice(index, 1);
+                this.recalculateTotals();
+                this.saveState();
+                this.updateUI();
+            },
+            triggerEl,
+        );
     }
 
     changeStatus(index, newStatus) {
         const trx = this.state.transactions[index];
-        const oldStatus = trx.status;
+        if (!trx || trx.status === newStatus) return;
 
-        if (oldStatus === newStatus) return;
-
-        // Update total - kurangi dari status lama
-        if (oldStatus === 'lunas') {
-            this.state.totals.lunas -= trx.total;
-            this.state.totals[trx.metode] -= trx.total;
-        } else {
-            this.state.totals.belumLunas -= trx.total;
-        }
-
-        // Update status
         trx.status = newStatus;
-
-        // Update metode dan total - tambahkan ke status baru
         if (newStatus === 'lunas') {
-            trx.metode = trx.originalMetode;
-            this.state.totals.lunas += trx.total;
-            this.state.totals[trx.metode] += trx.total;
+            trx.metode = trx.originalMetode && trx.originalMetode !== 'belum lunas' ? trx.originalMetode : 'cash';
         } else {
             trx.metode = 'belum lunas';
-            this.state.totals.belumLunas += trx.total;
         }
 
+        this.recalculateTotals();
         this.saveState();
         this.updateUI();
     }
 
     changeMetode(index, newMetode) {
         const trx = this.state.transactions[index];
-        if (trx.status !== 'lunas') return;
+        if (!trx || trx.status !== 'lunas' || trx.metode === newMetode) return;
 
-        const oldMetode = trx.metode;
-        if (oldMetode === newMetode) return;
-
-        // Update totals
-        this.state.totals[oldMetode] -= trx.total;
         trx.metode = newMetode;
-        this.state.totals[newMetode] += trx.total;
         trx.originalMetode = newMetode;
 
+        this.recalculateTotals();
         this.saveState();
         this.updateUI();
     }
 
     handleHitung() {
         const nama = document.getElementById('namaPembeli').value.trim();
-        const jumlah = parseInt(document.getElementById('jumlahTerjual').value);
-        const stokAwal = parseInt(document.getElementById('stokAwal').value);
+        const jumlah = parseInt(document.getElementById('jumlahTerjual').value, 10);
+        const stokAwalInput = parseInt(document.getElementById('stokAwal').value, 10);
         const jenis = document.getElementById('jenisPembeli').value;
         const status = document.getElementById('statusPembayaran').value;
         const metode = document.getElementById('metodePembayaran').value;
 
-        // Validasi
-        if (!nama || isNaN(jumlah) || jumlah < 1) {
-            alert('Nama dan jumlah harus diisi!');
+        this.hideFormError();
+
+        if (!nama) {
+            this.showFormError('Nama pembeli wajib diisi.');
+            document.getElementById('namaPembeli').focus();
             return;
         }
 
-        if (jumlah > stokAwal) {
-            alert('Stok tidak mencukupi!');
+        if (isNaN(jumlah) || jumlah < 1) {
+            this.showFormError('Jumlah box terjual minimal 1.');
+            document.getElementById('jumlahTerjual').focus();
             return;
         }
 
-        // Hitung total
-        let total = 0;
-        if (jenis === 'reguler') {
-            const promo3Box = Math.floor(jumlah / 3);
-            const sisaBox = jumlah % 3;
-            total = promo3Box * HARGA.PAKET_3BOX + sisaBox * HARGA.REGULER;
-        } else {
-            total = jumlah * HARGA.RESELLER;
+        const stokTersedia = isNaN(stokAwalInput) ? this.state.stok : stokAwalInput;
+
+        if (jumlah > stokTersedia) {
+            this.showFormError(`Stok tidak mencukupi (tersedia ${stokTersedia} box).`);
+            document.getElementById('jumlahTerjual').focus();
+            return;
         }
 
-        // Update state
-        this.state.stok = stokAwal - jumlah;
+        const total = hitungTotalHarga(jenis, jumlah);
+
+        this.state.stok = stokTersedia - jumlah;
         this.state.transactions.push({
             nama,
             jumlah,
@@ -272,34 +453,35 @@ class StateManager {
             originalMetode: metode,
         });
 
-        // Update totals
-        if (status === 'lunas') {
-            this.state.totals.lunas += total;
-            this.state.totals[metode] += total;
-        } else {
-            this.state.totals.belumLunas += total;
-        }
-
+        this.recalculateTotals();
         this.saveState();
         this.updateUI();
         this.resetForm();
     }
 
     handleReset() {
-        if (confirm('Yakin reset semua data?')) {
-            localStorage.removeItem('myDurenState');
-            this.state = {
-                stok: 100,
-                transactions: [],
-                totals: {
-                    belumLunas: 0,
-                    lunas: 0,
-                    cash: 0,
-                    transfer: 0,
-                },
-            };
-            this.updateUI();
-        }
+        const resetBtn = document.getElementById('resetButton');
+        this.openConfirmModal(
+            'Reset Semua Data',
+            'Semua daftar transaksi akan dihapus dan stok dikembalikan ke 100 box.',
+            () => {
+                localStorage.removeItem('myDurenState');
+                this.state = {
+                    stok: 100,
+                    transactions: [],
+                    totals: {
+                        belumLunas: 0,
+                        lunas: 0,
+                        cash: 0,
+                        transfer: 0,
+                    },
+                };
+                this.hideFormError();
+                this.updateUI();
+                this.updatePricePreview();
+            },
+            resetBtn,
+        );
     }
 
     getStatusSelectClass(status) {
@@ -312,27 +494,41 @@ class StateManager {
         return '';
     }
 
+    getTierBadgeHtml(jenis) {
+        const label = JENIS_LABEL[jenis] || JENIS_LABEL.reguler;
+        const isPremium = jenis === 'premium' || jenis === 'reseller_premium';
+        return `<span class="tier-badge ${isPremium ? 'tier-premium' : ''}">${escapeHtml(label)}</span>`;
+    }
+
     updateUI() {
-        // Update stok
         document.getElementById('stokAwal').value = this.state.stok;
+        document.getElementById('headerStokBadge').textContent = this.state.stok.toLocaleString('id-ID');
+
+        const totalBoxTerjual = this.state.transactions.reduce((acc, item) => acc + (item.jumlah || 0), 0);
+        document.getElementById('totalBoxTerjualLabel').textContent = `${totalBoxTerjual} box terjual`;
 
         const hasTransactions = this.state.transactions.length > 0;
-
-        // Update tabel desktop
         const tbody = document.getElementById('tabelPenjualan');
+        const tableContainer = document.getElementById('tableContainer');
         const emptyDesktop = document.getElementById('emptyStateDesktop');
-        
+
         if (hasTransactions) {
             emptyDesktop.classList.add('hidden');
+            tableContainer.classList.remove('hidden');
             tbody.innerHTML = this.state.transactions
-                .map(
-                    (trx, index) => `
-                <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-3 text-left font-medium text-gray-900">${trx.nama}</td>
-                    <td class="px-4 py-3 text-center text-gray-700">${trx.jumlah}</td>
-                    <td class="px-4 py-3 text-right text-gray-700 font-medium">Rp ${trx.total.toLocaleString()}</td>
-                    <td class="px-4 py-3 text-center">
-                        <select 
+                .map((trx, index) => {
+                    const safeNama = escapeHtml(trx.nama);
+                    return `
+                <tr>
+                    <td>
+                        <div style="font-weight: 700;">${safeNama}</div>
+                        ${this.getTierBadgeHtml(trx.jenis)}
+                    </td>
+                    <td class="col-center num" style="font-weight: 700;">${trx.jumlah}</td>
+                    <td class="col-right num" style="font-weight: 700;">Rp ${trx.total.toLocaleString('id-ID')}</td>
+                    <td class="col-center">
+                        <select
+                            aria-label="Status pembayaran ${safeNama}"
                             class="inline-select status-select ${this.getStatusSelectClass(trx.status)}"
                             data-index="${index}"
                         >
@@ -340,8 +536,9 @@ class StateManager {
                             <option value="belum lunas" ${trx.status === 'belum lunas' ? 'selected' : ''}>Belum Lunas</option>
                         </select>
                     </td>
-                    <td class="px-4 py-3 text-center">
-                        <select 
+                    <td class="col-center">
+                        <select
+                            aria-label="Metode pembayaran ${safeNama}"
                             class="inline-select metode-select ${this.getMetodeSelectClass(trx.metode)}"
                             data-index="${index}"
                             ${trx.status !== 'lunas' ? 'disabled' : ''}
@@ -351,67 +548,92 @@ class StateManager {
                             ${trx.status !== 'lunas' ? `<option value="belum lunas" selected>-</option>` : ''}
                         </select>
                     </td>
-                    <td class="px-4 py-3 text-center">
-                        <div class="flex gap-2 justify-center">
-                            <button class="btn-action btn-edit edit-btn" data-index="${index}" title="Edit jumlah">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                    <td class="col-center">
+                        <div class="action-group">
+                            <button
+                                type="button"
+                                class="btn-action btn-edit edit-btn"
+                                data-index="${index}"
+                                aria-label="Edit transaksi ${safeNama}"
+                                title="Edit transaksi"
+                            >
+                                <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
                             </button>
-                            <button class="btn-action btn-delete delete-btn" data-index="${index}" title="Hapus">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                            <button
+                                type="button"
+                                class="btn-action btn-delete delete-btn"
+                                data-index="${index}"
+                                aria-label="Hapus transaksi ${safeNama}"
+                                title="Hapus transaksi"
+                            >
+                                <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
                             </button>
                         </div>
                     </td>
                 </tr>
-            `,
-                )
+            `;
+                })
                 .join('');
         } else {
             tbody.innerHTML = '';
+            tableContainer.classList.add('hidden');
             emptyDesktop.classList.remove('hidden');
         }
 
-        // Update kartu mobile
         const cardContainer = document.getElementById('cardPenjualan');
         const emptyMobile = document.getElementById('emptyStateMobile');
 
         if (hasTransactions) {
             emptyMobile.classList.add('hidden');
             cardContainer.innerHTML = this.state.transactions
-                .map(
-                    (trx, index) => `
+                .map((trx, index) => {
+                    const safeNama = escapeHtml(trx.nama);
+                    return `
                 <div class="transaction-card">
-                    <div class="flex justify-between items-start mb-3">
+                    <div class="card-top">
                         <div>
-                            <p class="font-bold text-gray-900 text-lg">${trx.nama}</p>
-                            <p class="text-gray-500 text-sm">${trx.jumlah} box</p>
+                            <p class="card-buyer-name">${safeNama}</p>
+                            <p class="card-meta num">${trx.jumlah} box · Rp ${trx.total.toLocaleString('id-ID')}</p>
+                            ${this.getTierBadgeHtml(trx.jenis)}
                         </div>
-                        <div class="text-right flex items-start gap-2">
-                            <p class="font-bold text-gray-900 text-lg">Rp ${trx.total.toLocaleString()}</p>
-                            <div class="flex gap-1">
-                                <button class="btn-action btn-edit edit-btn" data-index="${index}" title="Edit jumlah">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-                                </button>
-                                <button class="btn-action btn-delete delete-btn" data-index="${index}" title="Hapus">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
-                                </button>
-                            </div>
+                        <div class="action-group">
+                            <button
+                                type="button"
+                                class="btn-action btn-edit edit-btn"
+                                data-index="${index}"
+                                aria-label="Edit transaksi ${safeNama}"
+                            >
+                                <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                            </button>
+                            <button
+                                type="button"
+                                class="btn-action btn-delete delete-btn"
+                                data-index="${index}"
+                                aria-label="Hapus transaksi ${safeNama}"
+                            >
+                                <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                            </button>
                         </div>
                     </div>
-                    <div class="flex gap-3 mt-4">
-                        <div class="flex-1">
-                            <p class="label mb-1">Status</p>
-                            <select 
-                                class="inline-select status-select w-full ${this.getStatusSelectClass(trx.status)}"
+                    <div class="card-controls-grid">
+                        <div>
+                            <label class="card-field-label" for="mobile-status-${index}">Status</label>
+                            <select
+                                id="mobile-status-${index}"
+                                class="inline-select status-select ${this.getStatusSelectClass(trx.status)}"
+                                style="width: 100%;"
                                 data-index="${index}"
                             >
                                 <option value="lunas" ${trx.status === 'lunas' ? 'selected' : ''}>Lunas</option>
                                 <option value="belum lunas" ${trx.status === 'belum lunas' ? 'selected' : ''}>Belum Lunas</option>
                             </select>
                         </div>
-                        <div class="flex-1">
-                            <p class="label mb-1">Metode</p>
-                            <select 
-                                class="inline-select metode-select w-full ${this.getMetodeSelectClass(trx.metode)}"
+                        <div>
+                            <label class="card-field-label" for="mobile-metode-${index}">Metode</label>
+                            <select
+                                id="mobile-metode-${index}"
+                                class="inline-select metode-select ${this.getMetodeSelectClass(trx.metode)}"
+                                style="width: 100%;"
                                 data-index="${index}"
                                 ${trx.status !== 'lunas' ? 'disabled' : ''}
                             >
@@ -422,28 +644,28 @@ class StateManager {
                         </div>
                     </div>
                 </div>
-            `,
-                )
+            `;
+                })
                 .join('');
         } else {
             cardContainer.innerHTML = '';
             emptyMobile.classList.remove('hidden');
         }
 
-        // Update totals
         document.getElementById('totalBelumLunas').textContent =
-            this.state.totals.belumLunas.toLocaleString();
+            this.state.totals.belumLunas.toLocaleString('id-ID');
         document.getElementById('totalLunas').textContent =
-            this.state.totals.lunas.toLocaleString();
+            this.state.totals.lunas.toLocaleString('id-ID');
         document.getElementById('totalCash').textContent =
-            this.state.totals.cash.toLocaleString();
+            this.state.totals.cash.toLocaleString('id-ID');
         document.getElementById('totalTransfer').textContent =
-            this.state.totals.transfer.toLocaleString();
+            this.state.totals.transfer.toLocaleString('id-ID');
     }
 
     resetForm() {
         document.getElementById('namaPembeli').value = '';
         document.getElementById('jumlahTerjual').value = '';
+        this.updatePricePreview();
     }
 
     saveState() {
@@ -452,19 +674,32 @@ class StateManager {
 
     loadState() {
         const saved = localStorage.getItem('myDurenState');
-        if (saved) {
-            this.state = JSON.parse(saved);
-            // Backward compatibility
-            this.state.transactions = this.state.transactions.map((trx) => ({
-                ...trx,
-                originalMetode: trx.originalMetode || trx.metode,
-                jenis: trx.jenis || 'reguler',
-            }));
+        if (!saved) return;
+
+        try {
+            const parsed = JSON.parse(saved);
+            if (parsed && Array.isArray(parsed.transactions)) {
+                this.state.stok = typeof parsed.stok === 'number' ? parsed.stok : 100;
+                // Pertahankan kompatibilitas data transaksi lama di localStorage.
+                this.state.transactions = parsed.transactions.map((trx) => {
+                    const jenis = trx.jenis || 'reguler';
+                    const jumlah = parseInt(trx.jumlah, 10) || 1;
+                    return {
+                        ...trx,
+                        jumlah,
+                        jenis,
+                        total: typeof trx.total === 'number' ? trx.total : hitungTotalHarga(jenis, jumlah),
+                        originalMetode: trx.originalMetode || trx.metode || 'cash',
+                    };
+                });
+                this.recalculateTotals();
+            }
+        } catch {
+            this.showFormError('Data tersimpan rusak. Silakan klik Reset Semua bila diperlukan.');
         }
     }
 }
 
-// Inisialisasi Aplikasi
 document.addEventListener('DOMContentLoaded', () => {
     const app = new StateManager();
     app.init();
