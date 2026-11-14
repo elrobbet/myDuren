@@ -1,8 +1,8 @@
 # DESIGN.md: myDuren Merchant Ledger
 
 ## Brand Identity & Soul
-- **Product:** `myDuren`, buku kas dan pencatatan stok penjualan box durian.
-- **Audience:** Penjual durian yang mencatat transaksi harian (Reguler, Premium, Reseller Reguler, Reseller Premium) secara cepat lewat ponsel maupun desktop.
+- **Product:** `myDuren`, buku kas, katalog harga varian, perhitungan modal-keuntungan, dan pencatatan stok penjualan box durian dengan fitur cadangan berkas JSON.
+- **Audience:** Penjual durian yang mengatur harga varian tahunan, mencatat stok dan modal satuan per box, memantau laba bersih, serta mencatat transaksi harian lewat ponsel maupun desktop.
 - **Personality:** Lugas, taktil seperti buku nota toko fisik, tanpa kalimat pemasaran atau basa-basi penjelasan.
 - **Dial:** `ENERGY 1 / RHYTHM 2 / MOTION 1`
 

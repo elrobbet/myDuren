@@ -1,73 +1,40 @@
-const HARGA = {
-    REGULER: 35000,
-    PAKET_3BOX_REGULER: 100000,
-    PREMIUM: 40000,
-    PAKET_3BOX_PREMIUM: 110000,
-    RESELLER: 30000,
-    RESELLER_PREMIUM: 34000,
-};
+const DEFAULT_VARIANTS = [
+    {
+        id: 'reguler',
+        nama: 'Reguler',
+        hargaJual: 35000,
+        hargaPaket3: 100000,
+        modalSatuan: 25000,
+        stok: 50,
+    },
+    {
+        id: 'premium',
+        nama: 'Premium',
+        hargaJual: 40000,
+        hargaPaket3: 110000,
+        modalSatuan: 30000,
+        stok: 50,
+    },
+    {
+        id: 'reseller',
+        nama: 'Reseller Reguler',
+        hargaJual: 30000,
+        hargaPaket3: 0,
+        modalSatuan: 25000,
+        stok: 0,
+    },
+    {
+        id: 'reseller_premium',
+        nama: 'Reseller Premium',
+        hargaJual: 34000,
+        hargaPaket3: 0,
+        modalSatuan: 30000,
+        stok: 0,
+    },
+];
 
-const JENIS_LABEL = {
-    reguler: 'Reguler',
-    premium: 'Premium',
-    reseller: 'Reseller Reguler',
-    reseller_premium: 'Reseller Premium',
-};
-
-function hitungTotalHarga(jenis, jumlah) {
-    if (!Number.isInteger(jumlah) || jumlah < 1) return 0;
-
-    if (jenis === 'premium') {
-        // Promo paket 3 box berlaku untuk pembeli umum varian Premium.
-        const paket = Math.floor(jumlah / 3);
-        const sisa = jumlah % 3;
-        return paket * HARGA.PAKET_3BOX_PREMIUM + sisa * HARGA.PREMIUM;
-    }
-
-    if (jenis === 'reseller') {
-        return jumlah * HARGA.RESELLER;
-    }
-
-    if (jenis === 'reseller_premium') {
-        return jumlah * HARGA.RESELLER_PREMIUM;
-    }
-
-    // Default ke Reguler (termasuk promo 3 box Rp 100.000).
-    const paket = Math.floor(jumlah / 3);
-    const sisa = jumlah % 3;
-    return paket * HARGA.PAKET_3BOX_REGULER + sisa * HARGA.REGULER;
-}
-
-function getInfoTarif(jenis, jumlah) {
-    const qty = Number.isInteger(jumlah) && jumlah > 0 ? jumlah : 0;
-
-    if (jenis === 'premium') {
-        if (qty >= 3) {
-            const paket = Math.floor(qty / 3);
-            const sisa = qty % 3;
-            return sisa > 0
-                ? `Premium: ${paket} paket 3-box + ${sisa} satuan`
-                : `Premium: ${paket} paket 3-box (Rp 110.000/paket)`;
-        }
-        return 'Harga satuan: Rp 40.000/box (3 box Rp 110.000)';
-    }
-
-    if (jenis === 'reseller') {
-        return 'Harga Reseller Reguler: Rp 30.000/box';
-    }
-
-    if (jenis === 'reseller_premium') {
-        return 'Harga Reseller Premium: Rp 34.000/box';
-    }
-
-    if (qty >= 3) {
-        const paket = Math.floor(qty / 3);
-        const sisa = qty % 3;
-        return sisa > 0
-            ? `Reguler: ${paket} paket 3-box + ${sisa} satuan`
-            : `Reguler: ${paket} paket 3-box (Rp 100.000/paket)`;
-    }
-    return 'Harga satuan: Rp 35.000/box (3 box Rp 100.000)';
+function cloneDefaultVariants() {
+    return DEFAULT_VARIANTS.map((v) => ({ ...v }));
 }
 
 function escapeHtml(str) {
@@ -79,21 +46,72 @@ function escapeHtml(str) {
         .replace(/'/g, '&#39;');
 }
 
+function formatRupiah(num) {
+    const val = Number.isFinite(num) ? Math.round(num) : 0;
+    return val.toLocaleString('id-ID');
+}
+
+function hitungHargaVarian(variant, jumlah) {
+    if (!variant || !Number.isInteger(jumlah) || jumlah < 1) return 0;
+    const hargaSatuan = Math.max(0, Number(variant.hargaJual) || 0);
+    const hargaPaket3 = Math.max(0, Number(variant.hargaPaket3) || 0);
+
+    if (hargaPaket3 > 0 && jumlah >= 3) {
+        const paket = Math.floor(jumlah / 3);
+        const sisa = jumlah % 3;
+        return paket * hargaPaket3 + sisa * hargaSatuan;
+    }
+
+    return jumlah * hargaSatuan;
+}
+
+function hitungModalVarian(variant, jumlah) {
+    if (!variant || !Number.isInteger(jumlah) || jumlah < 1) return 0;
+    const modalSatuan = Math.max(0, Number(variant.modalSatuan) || 0);
+    return jumlah * modalSatuan;
+}
+
+function getInfoTarifVarian(variant, jumlah) {
+    if (!variant) return 'Pilih varian duren terlebih dahulu';
+    const qty = Number.isInteger(jumlah) && jumlah > 0 ? jumlah : 0;
+    const hargaSatuan = Math.max(0, Number(variant.hargaJual) || 0);
+    const hargaPaket3 = Math.max(0, Number(variant.hargaPaket3) || 0);
+
+    if (hargaPaket3 > 0) {
+        if (qty >= 3) {
+            const paket = Math.floor(qty / 3);
+            const sisa = qty % 3;
+            return sisa > 0
+                ? `${variant.nama}: ${paket} paket 3-box + ${sisa} satuan`
+                : `${variant.nama}: ${paket} paket 3-box (Rp ${formatRupiah(hargaPaket3)}/paket)`;
+        }
+        return `Harga: Rp ${formatRupiah(hargaSatuan)}/box (3 box Rp ${formatRupiah(hargaPaket3)})`;
+    }
+
+    return `Harga ${variant.nama}: Rp ${formatRupiah(hargaSatuan)}/box`;
+}
+
 class StateManager {
     constructor() {
         this.state = {
-            stok: 100,
+            variants: cloneDefaultVariants(),
             transactions: [],
             totals: {
                 belumLunas: 0,
                 lunas: 0,
                 cash: 0,
                 transfer: 0,
+                omzet: 0,
+                modal: 0,
+                untung: 0,
+                untungLunas: 0,
             },
         };
         this.editingIndex = null;
+        this.editingVariantId = null;
         this.confirmCallback = null;
         this.lastFocusedElement = null;
+        this.noticeTimer = null;
     }
 
     init() {
@@ -103,9 +121,9 @@ class StateManager {
         this.setupTableHandlers();
         this.setupModalHandlers();
         this.syncMetodeWithStatus();
-        this.updatePricePreview();
         document.getElementById('loadingState').classList.add('hidden');
         this.updateUI();
+        this.updatePricePreview();
     }
 
     initTheme() {
@@ -132,56 +150,30 @@ class StateManager {
         }
     }
 
-    setupEventListeners() {
-        document.getElementById('themeToggleBtn').addEventListener('click', () => {
-            const current = document.documentElement.getAttribute('data-theme');
-            this.applyTheme(current === 'dark' ? 'light' : 'dark');
-        });
-
-        document.getElementById('hitungButton').addEventListener('click', () => this.handleHitung());
-        document.getElementById('resetButton').addEventListener('click', () => this.handleReset());
-
-        document.getElementById('jenisPembeli').addEventListener('change', () => {
-            this.hideFormError();
-            this.updatePricePreview();
-        });
-
-        document.getElementById('jumlahTerjual').addEventListener('input', () => {
-            this.hideFormError();
-            this.updatePricePreview();
-        });
-
-        document.getElementById('namaPembeli').addEventListener('input', () => {
-            this.hideFormError();
-        });
-
-        document.getElementById('stokAwal').addEventListener('change', (e) => {
-            const val = parseInt(e.target.value, 10);
-            if (!isNaN(val) && val >= 0) {
-                this.state.stok = val;
-                this.saveState();
-                this.updateUI();
-            }
-        });
-
-        document.getElementById('statusPembayaran').addEventListener('change', () => {
-            this.syncMetodeWithStatus();
-        });
+    getVariantById(id) {
+        return this.state.variants.find((v) => v.id === id) || null;
     }
 
-    syncMetodeWithStatus() {
-        const status = document.getElementById('statusPembayaran').value;
-        const metodeSelect = document.getElementById('metodePembayaran');
-        metodeSelect.disabled = status === 'belum lunas';
+    getTotalStok() {
+        return this.state.variants.reduce((acc, v) => acc + (Math.max(0, parseInt(v.stok, 10)) || 0), 0);
     }
 
-    updatePricePreview() {
-        const jenis = document.getElementById('jenisPembeli').value;
-        const jumlah = parseInt(document.getElementById('jumlahTerjual').value, 10);
-        const total = hitungTotalHarga(jenis, jumlah);
+    getTotalModalStokSisa() {
+        return this.state.variants.reduce((acc, v) => {
+            const stok = Math.max(0, parseInt(v.stok, 10) || 0);
+            const modal = Math.max(0, Number(v.modalSatuan) || 0);
+            return acc + stok * modal;
+        }, 0);
+    }
 
-        document.getElementById('previewNote').textContent = getInfoTarif(jenis, jumlah);
-        document.getElementById('previewTotal').textContent = `Rp ${total.toLocaleString('id-ID')}`;
+    showNotice(msg) {
+        const banner = document.getElementById('globalNotice');
+        document.getElementById('globalNoticeText').textContent = msg;
+        banner.classList.remove('hidden');
+        if (this.noticeTimer) clearTimeout(this.noticeTimer);
+        this.noticeTimer = setTimeout(() => {
+            banner.classList.add('hidden');
+        }, 4500);
     }
 
     showFormError(msg) {
@@ -204,6 +196,101 @@ class StateManager {
         document.getElementById('editError').classList.add('hidden');
     }
 
+    showVariantError(msg) {
+        const banner = document.getElementById('variantError');
+        document.getElementById('variantErrorText').textContent = msg;
+        banner.classList.remove('hidden');
+    }
+
+    hideVariantError() {
+        document.getElementById('variantError').classList.add('hidden');
+    }
+
+    setupEventListeners() {
+        document.getElementById('themeToggleBtn').addEventListener('click', () => {
+            const current = document.documentElement.getAttribute('data-theme');
+            this.applyTheme(current === 'dark' ? 'light' : 'dark');
+        });
+
+        document.getElementById('openAddVariantBtn').addEventListener('click', (e) => {
+            this.openVariantModal(null, e.currentTarget);
+        });
+
+        document.getElementById('downloadBackupBtn').addEventListener('click', () => {
+            this.handleDownloadBackup();
+        });
+
+        const uploadInput = document.getElementById('uploadBackupInput');
+        document.getElementById('uploadBackupBtn').addEventListener('click', () => {
+            uploadInput.value = '';
+            uploadInput.click();
+        });
+
+        uploadInput.addEventListener('change', (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (file) {
+                this.handleUploadBackup(file);
+            }
+        });
+
+        document.getElementById('hitungButton').addEventListener('click', () => this.handleHitung());
+        document.getElementById('resetButton').addEventListener('click', () => this.handleReset());
+
+        document.getElementById('jenisPembeli').addEventListener('change', () => {
+            this.hideFormError();
+            this.updatePricePreview();
+        });
+
+        document.getElementById('jumlahTerjual').addEventListener('input', () => {
+            this.hideFormError();
+            this.updatePricePreview();
+        });
+
+        document.getElementById('namaPembeli').addEventListener('input', () => {
+            this.hideFormError();
+        });
+
+        document.getElementById('statusPembayaran').addEventListener('change', () => {
+            this.syncMetodeWithStatus();
+        });
+    }
+
+    syncMetodeWithStatus() {
+        const status = document.getElementById('statusPembayaran').value;
+        const metodeSelect = document.getElementById('metodePembayaran');
+        metodeSelect.disabled = status === 'belum lunas';
+    }
+
+    updatePricePreview() {
+        const jenisId = document.getElementById('jenisPembeli').value;
+        const variant = this.getVariantById(jenisId);
+        const rawJumlah = parseInt(document.getElementById('jumlahTerjual').value, 10);
+        const jumlah = Number.isInteger(rawJumlah) && rawJumlah > 0 ? rawJumlah : 0;
+
+        if (!variant) {
+            document.getElementById('previewNote').textContent = 'Tambahkan varian duren terlebih dahulu';
+            document.getElementById('previewTotal').textContent = 'Rp 0';
+            document.getElementById('previewModalNote').textContent = 'Modal: Rp 0';
+            document.getElementById('previewProfit').textContent = 'Estimasi Untung: Rp 0';
+            return;
+        }
+
+        const totalJual = hitungHargaVarian(variant, jumlah);
+        const totalModal = hitungModalVarian(variant, jumlah);
+        const untung = totalJual - totalModal;
+
+        document.getElementById('previewNote').textContent = getInfoTarifVarian(variant, jumlah);
+        document.getElementById('previewTotal').textContent = `Rp ${formatRupiah(totalJual)}`;
+        document.getElementById('previewModalNote').textContent =
+            jumlah > 0
+                ? `Modal (${jumlah} box × Rp ${formatRupiah(variant.modalSatuan)}): Rp ${formatRupiah(totalModal)}`
+                : `Modal satuan: Rp ${formatRupiah(variant.modalSatuan)}/box · Stok: ${variant.stok} box`;
+        document.getElementById('previewProfit').textContent =
+            jumlah > 0
+                ? `Estimasi Untung: Rp ${formatRupiah(untung)}`
+                : `Untung/box: Rp ${formatRupiah(variant.hargaJual - variant.modalSatuan)}`;
+    }
+
     setupTableHandlers() {
         document.addEventListener('change', (e) => {
             if (e.target.classList.contains('status-select')) {
@@ -216,6 +303,20 @@ class StateManager {
         });
 
         document.addEventListener('click', (e) => {
+            const editVariantBtn = e.target.closest('.edit-variant-btn');
+            if (editVariantBtn) {
+                const id = editVariantBtn.dataset.id;
+                this.openVariantModal(id, editVariantBtn);
+                return;
+            }
+
+            const deleteVariantBtn = e.target.closest('.delete-variant-btn');
+            if (deleteVariantBtn) {
+                const id = deleteVariantBtn.dataset.id;
+                this.handleDeleteVariant(id, deleteVariantBtn);
+                return;
+            }
+
             const deleteBtn = e.target.closest('.delete-btn');
             if (deleteBtn) {
                 const index = parseInt(deleteBtn.dataset.index, 10);
@@ -232,8 +333,16 @@ class StateManager {
     }
 
     setupModalHandlers() {
+        const variantModal = document.getElementById('variantModal');
         const editModal = document.getElementById('editModal');
         const confirmModal = document.getElementById('confirmModal');
+
+        document.getElementById('cancelVariantBtn').addEventListener('click', () => this.closeVariantModal());
+        document.getElementById('saveVariantBtn').addEventListener('click', () => this.saveVariant());
+
+        variantModal.addEventListener('click', (e) => {
+            if (e.target === variantModal) this.closeVariantModal();
+        });
 
         document.getElementById('cancelEditBtn').addEventListener('click', () => this.closeEditModal());
         document.getElementById('saveEditBtn').addEventListener('click', () => this.saveEdit());
@@ -260,13 +369,154 @@ class StateManager {
 
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
-                if (!editModal.classList.contains('hidden')) {
+                if (!variantModal.classList.contains('hidden')) {
+                    this.closeVariantModal();
+                } else if (!editModal.classList.contains('hidden')) {
                     this.closeEditModal();
                 } else if (!confirmModal.classList.contains('hidden')) {
                     this.closeConfirmModal();
                 }
             }
         });
+    }
+
+    openVariantModal(variantId = null, triggerEl = null) {
+        this.lastFocusedElement = triggerEl || document.activeElement;
+        this.editingVariantId = variantId;
+        this.hideVariantError();
+
+        const titleEl = document.getElementById('variantModalTitle');
+        const namaInput = document.getElementById('variantNamaInput');
+        const hargaJualInput = document.getElementById('variantHargaJualInput');
+        const hargaPaket3Input = document.getElementById('variantHargaPaket3Input');
+        const modalInput = document.getElementById('variantModalInput');
+        const stokInput = document.getElementById('variantStokInput');
+
+        if (variantId) {
+            const v = this.getVariantById(variantId);
+            if (!v) return;
+            titleEl.textContent = `Edit Varian: ${v.nama}`;
+            namaInput.value = v.nama;
+            hargaJualInput.value = v.hargaJual;
+            hargaPaket3Input.value = v.hargaPaket3 || 0;
+            modalInput.value = v.modalSatuan || 0;
+            stokInput.value = v.stok || 0;
+        } else {
+            titleEl.textContent = 'Tambah Varian Duren';
+            namaInput.value = '';
+            hargaJualInput.value = '';
+            hargaPaket3Input.value = '0';
+            modalInput.value = '';
+            stokInput.value = '';
+        }
+
+        document.getElementById('variantModal').classList.remove('hidden');
+        namaInput.focus();
+    }
+
+    closeVariantModal() {
+        document.getElementById('variantModal').classList.add('hidden');
+        this.editingVariantId = null;
+        this.hideVariantError();
+        if (this.lastFocusedElement && typeof this.lastFocusedElement.focus === 'function') {
+            this.lastFocusedElement.focus();
+        }
+    }
+
+    saveVariant() {
+        const nama = document.getElementById('variantNamaInput').value.trim();
+        const hargaJual = parseInt(document.getElementById('variantHargaJualInput').value, 10);
+        const rawPaket3 = parseInt(document.getElementById('variantHargaPaket3Input').value, 10);
+        const hargaPaket3 = isNaN(rawPaket3) || rawPaket3 < 0 ? 0 : rawPaket3;
+        const modalSatuan = parseInt(document.getElementById('variantModalInput').value, 10);
+        const stok = parseInt(document.getElementById('variantStokInput').value, 10);
+
+        if (!nama) {
+            this.showVariantError('Nama varian duren wajib diisi.');
+            document.getElementById('variantNamaInput').focus();
+            return;
+        }
+
+        if (isNaN(hargaJual) || hargaJual < 0) {
+            this.showVariantError('Harga jual per box wajib diisi dengan angka valid.');
+            document.getElementById('variantHargaJualInput').focus();
+            return;
+        }
+
+        if (isNaN(modalSatuan) || modalSatuan < 0) {
+            this.showVariantError('Modal satuan per box wajib diisi (minimal 0).');
+            document.getElementById('variantModalInput').focus();
+            return;
+        }
+
+        if (isNaN(stok) || stok < 0) {
+            this.showVariantError('Stok box tersedia wajib diisi (minimal 0).');
+            document.getElementById('variantStokInput').focus();
+            return;
+        }
+
+        if (this.editingVariantId) {
+            const existing = this.getVariantById(this.editingVariantId);
+            if (!existing) return;
+            existing.nama = nama;
+            existing.hargaJual = hargaJual;
+            existing.hargaPaket3 = hargaPaket3;
+            existing.modalSatuan = modalSatuan;
+            existing.stok = stok;
+
+            // Perbarui label varian pada transaksi yang memakai varian ini
+            for (const trx of this.state.transactions) {
+                if (trx.jenis === existing.id) {
+                    trx.namaVarian = nama;
+                }
+            }
+            this.showNotice(`Varian "${nama}" berhasil diperbarui.`);
+        } else {
+            const slug =
+                nama
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '_')
+                    .replace(/^_|_$/g, '') || 'varian';
+            const uniqueId = `${slug}_${Date.now().toString(36)}`;
+            this.state.variants.push({
+                id: uniqueId,
+                nama,
+                hargaJual,
+                hargaPaket3,
+                modalSatuan,
+                stok,
+            });
+            this.showNotice(`Varian "${nama}" berhasil ditambahkan.`);
+        }
+
+        this.recalculateTotals();
+        this.saveState();
+        this.updateUI();
+        this.updatePricePreview();
+        this.closeVariantModal();
+    }
+
+    handleDeleteVariant(variantId, triggerEl) {
+        const v = this.getVariantById(variantId);
+        if (!v) return;
+
+        if (this.state.variants.length <= 1) {
+            this.showFormError('Minimal harus ada 1 varian duren di katalog.');
+            return;
+        }
+
+        this.openConfirmModal(
+            'Hapus Varian Duren',
+            `Hapus varian "${v.nama}" (stok: ${v.stok} box) dari katalog? Catatan transaksi lama tetap tersimpan.`,
+            () => {
+                this.state.variants = this.state.variants.filter((item) => item.id !== variantId);
+                this.saveState();
+                this.updateUI();
+                this.updatePricePreview();
+                this.showNotice(`Varian "${v.nama}" telah dihapus.`);
+            },
+            triggerEl,
+        );
     }
 
     openConfirmModal(title, message, onConfirm, triggerEl = null) {
@@ -294,8 +544,10 @@ class StateManager {
         this.editingIndex = index;
         this.hideEditError();
 
+        this.renderVariantSelects(trx.jenis);
+
         document.getElementById('editNama').textContent = trx.nama;
-        document.getElementById('editJenisSelect').value = trx.jenis || 'reguler';
+        document.getElementById('editJenisSelect').value = trx.jenis;
         document.getElementById('editJumlahInput').value = trx.jumlah;
         document.getElementById('editModal').classList.remove('hidden');
         document.getElementById('editJumlahInput').focus();
@@ -317,16 +569,30 @@ class StateManager {
             lunas: 0,
             cash: 0,
             transfer: 0,
+            omzet: 0,
+            modal: 0,
+            untung: 0,
+            untungLunas: 0,
         };
 
         for (const trx of this.state.transactions) {
+            const totalJual = Number(trx.total) || 0;
+            const totalModal = Number(trx.totalModal) || 0;
+            const untung = totalJual - totalModal;
+
+            trx.untung = untung;
+            totals.omzet += totalJual;
+            totals.modal += totalModal;
+            totals.untung += untung;
+
             if (trx.status === 'lunas') {
-                totals.lunas += trx.total;
+                totals.lunas += totalJual;
+                totals.untungLunas += untung;
                 if (trx.metode === 'cash' || trx.metode === 'transfer') {
-                    totals[trx.metode] += trx.total;
+                    totals[trx.metode] += totalJual;
                 }
             } else {
-                totals.belumLunas += trx.total;
+                totals.belumLunas += totalJual;
             }
         }
 
@@ -346,21 +612,44 @@ class StateManager {
         const trx = this.state.transactions[index];
         if (!trx) return;
 
-        const diff = newJumlah - trx.jumlah;
+        const oldVariant = this.getVariantById(trx.jenis);
+        const newVariant = this.getVariantById(newJenis);
 
-        if (diff > 0 && diff > this.state.stok) {
-            this.showEditError(`Stok tidak cukup. Sisa stok: ${this.state.stok} box.`);
+        if (!newVariant) {
+            this.showEditError('Varian yang dipilih tidak ditemukan.');
             return;
+        }
+
+        if (trx.jenis === newJenis) {
+            const diff = newJumlah - trx.jumlah;
+            if (diff > 0 && diff > newVariant.stok) {
+                this.showEditError(`Stok ${newVariant.nama} tidak cukup. Sisa stok: ${newVariant.stok} box.`);
+                return;
+            }
+            newVariant.stok -= diff;
+        } else {
+            if (newJumlah > newVariant.stok) {
+                this.showEditError(`Stok ${newVariant.nama} tidak cukup. Sisa stok: ${newVariant.stok} box.`);
+                return;
+            }
+            if (oldVariant) {
+                oldVariant.stok += trx.jumlah;
+            }
+            newVariant.stok -= newJumlah;
         }
 
         trx.jumlah = newJumlah;
         trx.jenis = newJenis;
-        trx.total = hitungTotalHarga(newJenis, newJumlah);
-        this.state.stok -= diff;
+        trx.namaVarian = newVariant.nama;
+        trx.modalSatuan = newVariant.modalSatuan;
+        trx.total = hitungHargaVarian(newVariant, newJumlah);
+        trx.totalModal = hitungModalVarian(newVariant, newJumlah);
+        trx.untung = trx.total - trx.totalModal;
 
         this.recalculateTotals();
         this.saveState();
         this.updateUI();
+        this.updatePricePreview();
         this.closeEditModal();
     }
 
@@ -370,13 +659,17 @@ class StateManager {
 
         this.openConfirmModal(
             'Hapus Transaksi',
-            `Hapus catatan pembelian "${trx.nama}" (${trx.jumlah} box)? Stok akan dikembalikan.`,
+            `Hapus catatan pembelian "${trx.nama}" (${trx.jumlah} box ${trx.namaVarian || ''})? Stok varian akan dikembalikan.`,
             () => {
-                this.state.stok += trx.jumlah;
+                const variant = this.getVariantById(trx.jenis);
+                if (variant) {
+                    variant.stok += trx.jumlah;
+                }
                 this.state.transactions.splice(index, 1);
                 this.recalculateTotals();
                 this.saveState();
                 this.updateUI();
+                this.updatePricePreview();
             },
             triggerEl,
         );
@@ -413,8 +706,7 @@ class StateManager {
     handleHitung() {
         const nama = document.getElementById('namaPembeli').value.trim();
         const jumlah = parseInt(document.getElementById('jumlahTerjual').value, 10);
-        const stokAwalInput = parseInt(document.getElementById('stokAwal').value, 10);
-        const jenis = document.getElementById('jenisPembeli').value;
+        const jenisId = document.getElementById('jenisPembeli').value;
         const status = document.getElementById('statusPembayaran').value;
         const metode = document.getElementById('metodePembayaran').value;
 
@@ -426,28 +718,40 @@ class StateManager {
             return;
         }
 
+        const variant = this.getVariantById(jenisId);
+        if (!variant) {
+            this.showFormError('Silakan pilih atau tambahkan varian duren terlebih dahulu.');
+            return;
+        }
+
         if (isNaN(jumlah) || jumlah < 1) {
             this.showFormError('Jumlah box terjual minimal 1.');
             document.getElementById('jumlahTerjual').focus();
             return;
         }
 
-        const stokTersedia = isNaN(stokAwalInput) ? this.state.stok : stokAwalInput;
-
-        if (jumlah > stokTersedia) {
-            this.showFormError(`Stok tidak mencukupi (tersedia ${stokTersedia} box).`);
+        if (jumlah > variant.stok) {
+            this.showFormError(
+                `Stok ${variant.nama} tidak mencukupi (tersedia ${variant.stok} box). Silakan tambah stok di Katalog Duren.`,
+            );
             document.getElementById('jumlahTerjual').focus();
             return;
         }
 
-        const total = hitungTotalHarga(jenis, jumlah);
+        const total = hitungHargaVarian(variant, jumlah);
+        const totalModal = hitungModalVarian(variant, jumlah);
+        const untung = total - totalModal;
 
-        this.state.stok = stokTersedia - jumlah;
+        variant.stok -= jumlah;
         this.state.transactions.push({
             nama,
             jumlah,
             total,
-            jenis,
+            modalSatuan: variant.modalSatuan,
+            totalModal,
+            untung,
+            jenis: variant.id,
+            namaVarian: variant.nama,
             status,
             metode: status === 'belum lunas' ? 'belum lunas' : metode,
             originalMetode: metode,
@@ -462,26 +766,87 @@ class StateManager {
     handleReset() {
         const resetBtn = document.getElementById('resetButton');
         this.openConfirmModal(
-            'Reset Semua Data',
-            'Semua daftar transaksi akan dihapus dan stok dikembalikan ke 100 box.',
+            'Reset Daftar Transaksi',
+            'Semua daftar transaksi penjualan akan dihapus dan stok dari transaksi tersebut dikembalikan ke masing-masing varian (harga & katalog varian Anda tidak dihapus).',
             () => {
-                localStorage.removeItem('myDurenState');
-                this.state = {
-                    stok: 100,
-                    transactions: [],
-                    totals: {
-                        belumLunas: 0,
-                        lunas: 0,
-                        cash: 0,
-                        transfer: 0,
-                    },
-                };
+                for (const trx of this.state.transactions) {
+                    const v = this.getVariantById(trx.jenis);
+                    if (v) {
+                        v.stok += trx.jumlah || 0;
+                    }
+                }
+                this.state.transactions = [];
+                this.recalculateTotals();
+                this.saveState();
                 this.hideFormError();
                 this.updateUI();
                 this.updatePricePreview();
+                this.showNotice('Semua transaksi berhasil direset dan stok telah dikembalikan.');
             },
             resetBtn,
         );
+    }
+
+    handleDownloadBackup() {
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const dd = String(now.getDate()).padStart(2, '0');
+
+        const payload = {
+            app: 'myDuren',
+            version: 2,
+            exportedAt: now.toISOString(),
+            variants: this.state.variants,
+            transactions: this.state.transactions,
+            totals: this.state.totals,
+        };
+
+        const jsonStr = JSON.stringify(payload, null, 2);
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `myduren-backup-${yyyy}-${mm}-${dd}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        this.showNotice(`Data berhasil diunduh (${link.download}). Simpan berkas ini sebagai cadangan.`);
+    }
+
+    handleUploadBackup(file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const parsed = JSON.parse(event.target.result);
+                if (!parsed || (!Array.isArray(parsed.variants) && !Array.isArray(parsed.transactions))) {
+                    this.showFormError('Berkas JSON tidak valid atau bukan format cadangan myDuren.');
+                    return;
+                }
+
+                const countVarian = Array.isArray(parsed.variants) ? parsed.variants.length : DEFAULT_VARIANTS.length;
+                const countTrx = Array.isArray(parsed.transactions) ? parsed.transactions.length : 0;
+
+                this.openConfirmModal(
+                    'Pulihkan Data dari Berkas',
+                    `Muat data dari "${file.name}" (${countVarian} varian, ${countTrx} transaksi)? Data saat ini akan digantikan oleh isi berkas tersebut.`,
+                    () => {
+                        this.applyImportedData(parsed);
+                        this.saveState();
+                        this.updateUI();
+                        this.updatePricePreview();
+                        this.showNotice(`Data dari "${file.name}" berhasil dimuat dan ditampilkan kembali.`);
+                    },
+                    document.getElementById('uploadBackupBtn'),
+                );
+            } catch {
+                this.showFormError('Gagal membaca berkas JSON. Pastikan berkas tidak rusak.');
+            }
+        };
+        reader.readAsText(file);
     }
 
     getStatusSelectClass(status) {
@@ -494,18 +859,131 @@ class StateManager {
         return '';
     }
 
-    getTierBadgeHtml(jenis) {
-        const label = JENIS_LABEL[jenis] || JENIS_LABEL.reguler;
-        const isPremium = jenis === 'premium' || jenis === 'reseller_premium';
+    getTierBadgeHtml(trx) {
+        const variant = this.getVariantById(trx.jenis);
+        const label = trx.namaVarian || (variant ? variant.nama : trx.jenis || 'Reguler');
+        const lower = String(label).toLowerCase();
+        const isPremium = lower.includes('premium') || lower.includes('musang') || lower.includes('super');
         return `<span class="tier-badge ${isPremium ? 'tier-premium' : ''}">${escapeHtml(label)}</span>`;
     }
 
+    renderVariantCatalog() {
+        const container = document.getElementById('variantListContainer');
+        const emptyState = document.getElementById('emptyVariantState');
+
+        if (!this.state.variants.length) {
+            container.innerHTML = '';
+            emptyState.classList.remove('hidden');
+            return;
+        }
+
+        emptyState.classList.add('hidden');
+        container.innerHTML = this.state.variants
+            .map((v) => {
+                const safeNama = escapeHtml(v.nama);
+                const safeId = escapeHtml(v.id);
+                const marginPerBox = (Number(v.hargaJual) || 0) - (Number(v.modalSatuan) || 0);
+                const paketText =
+                    v.hargaPaket3 && v.hargaPaket3 > 0
+                        ? ` · 3 box Rp ${formatRupiah(v.hargaPaket3)}`
+                        : '';
+                const isEmpty = (parseInt(v.stok, 10) || 0) <= 0;
+
+                return `
+                <div class="variant-item">
+                    <div class="variant-info">
+                        <div class="variant-name-row">
+                            <p class="variant-name">${safeNama}</p>
+                            <span class="variant-stock-tag num ${isEmpty ? 'stock-empty' : ''}">
+                                Stok: ${formatRupiah(v.stok)} box
+                            </span>
+                            <span class="variant-profit-pill num">
+                                Untung Rp ${formatRupiah(marginPerBox)}/box
+                            </span>
+                        </div>
+                        <div class="variant-metrics num">
+                            <span>Jual: <strong>Rp ${formatRupiah(v.hargaJual)}</strong>/box${paketText}</span>
+                            <span>Modal: <strong>Rp ${formatRupiah(v.modalSatuan)}</strong>/box</span>
+                        </div>
+                    </div>
+                    <div class="action-group">
+                        <button
+                            type="button"
+                            class="btn-action btn-edit edit-variant-btn"
+                            data-id="${safeId}"
+                            aria-label="Edit harga dan stok varian ${safeNama}"
+                            title="Edit harga, modal & stok"
+                        >
+                            <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                        </button>
+                        <button
+                            type="button"
+                            class="btn-action btn-delete delete-variant-btn"
+                            data-id="${safeId}"
+                            aria-label="Hapus varian ${safeNama}"
+                            title="Hapus varian"
+                        >
+                            <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                        </button>
+                    </div>
+                </div>
+            `;
+            })
+            .join('');
+    }
+
+    renderVariantSelects(ensureVariantId = null) {
+        const mainSelect = document.getElementById('jenisPembeli');
+        const editSelect = document.getElementById('editJenisSelect');
+        const currentMainVal = mainSelect.value;
+
+        const optionsHtml = this.state.variants
+            .map((v) => {
+                const safeNama = escapeHtml(v.nama);
+                const safeId = escapeHtml(v.id);
+                const paketNote =
+                    v.hargaPaket3 && v.hargaPaket3 > 0 ? ` · 3 box Rp ${formatRupiah(v.hargaPaket3)}` : '';
+                return `<option value="${safeId}">${safeNama} (Rp ${formatRupiah(v.hargaJual)}/box${paketNote} · Stok: ${v.stok})</option>`;
+            })
+            .join('');
+
+        mainSelect.innerHTML = optionsHtml;
+        editSelect.innerHTML = optionsHtml;
+
+        if (currentMainVal && this.getVariantById(currentMainVal)) {
+            mainSelect.value = currentMainVal;
+        } else if (this.state.variants.length > 0) {
+            mainSelect.value = this.state.variants[0].id;
+        }
+
+        if (ensureVariantId && !this.getVariantById(ensureVariantId)) {
+            editSelect.innerHTML += `<option value="${escapeHtml(ensureVariantId)}">${escapeHtml(ensureVariantId)} (Varian Lama)</option>`;
+        }
+    }
+
+    updateFooterSummary() {
+        const footerEl = document.getElementById('footerPricingSummary');
+        if (!this.state.variants.length) {
+            footerEl.textContent = 'Belum ada varian terdaftar';
+            return;
+        }
+        footerEl.textContent = this.state.variants
+            .map((v) => {
+                const paket = v.hargaPaket3 > 0 ? ` (3 box ${formatRupiah(v.hargaPaket3)})` : '';
+                return `${v.nama}: Rp ${formatRupiah(v.hargaJual)}${paket}`;
+            })
+            .join(' · ');
+    }
+
     updateUI() {
-        document.getElementById('stokAwal').value = this.state.stok;
-        document.getElementById('headerStokBadge').textContent = this.state.stok.toLocaleString('id-ID');
+        this.renderVariantCatalog();
+        this.renderVariantSelects();
+        this.updateFooterSummary();
+
+        document.getElementById('headerStokBadge').textContent = formatRupiah(this.getTotalStok());
 
         const totalBoxTerjual = this.state.transactions.reduce((acc, item) => acc + (item.jumlah || 0), 0);
-        document.getElementById('totalBoxTerjualLabel').textContent = `${totalBoxTerjual} box terjual`;
+        document.getElementById('totalBoxTerjualLabel').textContent = `${formatRupiah(totalBoxTerjual)} box terjual`;
 
         const hasTransactions = this.state.transactions.length > 0;
         const tbody = document.getElementById('tabelPenjualan');
@@ -518,14 +996,22 @@ class StateManager {
             tbody.innerHTML = this.state.transactions
                 .map((trx, index) => {
                     const safeNama = escapeHtml(trx.nama);
+                    const totalModal = Number(trx.totalModal) || 0;
+                    const untung = Number(trx.untung) || 0;
+
                     return `
                 <tr>
                     <td>
                         <div style="font-weight: 700;">${safeNama}</div>
-                        ${this.getTierBadgeHtml(trx.jenis)}
+                        ${this.getTierBadgeHtml(trx)}
                     </td>
                     <td class="col-center num" style="font-weight: 700;">${trx.jumlah}</td>
-                    <td class="col-right num" style="font-weight: 700;">Rp ${trx.total.toLocaleString('id-ID')}</td>
+                    <td class="col-right num">
+                        <div style="font-weight: 700;">Rp ${formatRupiah(trx.total)}</div>
+                        <div class="trx-profit-line">
+                            Modal Rp ${formatRupiah(totalModal)} · <span class="trx-profit-val">Untung Rp ${formatRupiah(untung)}</span>
+                        </div>
+                    </td>
                     <td class="col-center">
                         <select
                             aria-label="Status pembayaran ${safeNama}"
@@ -588,13 +1074,19 @@ class StateManager {
             cardContainer.innerHTML = this.state.transactions
                 .map((trx, index) => {
                     const safeNama = escapeHtml(trx.nama);
+                    const totalModal = Number(trx.totalModal) || 0;
+                    const untung = Number(trx.untung) || 0;
+
                     return `
                 <div class="transaction-card">
                     <div class="card-top">
                         <div>
                             <p class="card-buyer-name">${safeNama}</p>
-                            <p class="card-meta num">${trx.jumlah} box · Rp ${trx.total.toLocaleString('id-ID')}</p>
-                            ${this.getTierBadgeHtml(trx.jenis)}
+                            <p class="card-meta num">${trx.jumlah} box · Jual Rp ${formatRupiah(trx.total)}</p>
+                            <p class="trx-profit-line num">
+                                Modal Rp ${formatRupiah(totalModal)} · <span class="trx-profit-val">Untung Rp ${formatRupiah(untung)}</span>
+                            </p>
+                            ${this.getTierBadgeHtml(trx)}
                         </div>
                         <div class="action-group">
                             <button
@@ -652,14 +1144,15 @@ class StateManager {
             emptyMobile.classList.remove('hidden');
         }
 
-        document.getElementById('totalBelumLunas').textContent =
-            this.state.totals.belumLunas.toLocaleString('id-ID');
-        document.getElementById('totalLunas').textContent =
-            this.state.totals.lunas.toLocaleString('id-ID');
-        document.getElementById('totalCash').textContent =
-            this.state.totals.cash.toLocaleString('id-ID');
-        document.getElementById('totalTransfer').textContent =
-            this.state.totals.transfer.toLocaleString('id-ID');
+        document.getElementById('totalOmzet').textContent = formatRupiah(this.state.totals.omzet);
+        document.getElementById('totalModal').textContent = formatRupiah(this.state.totals.modal);
+        document.getElementById('totalUntung').textContent = formatRupiah(this.state.totals.untung);
+        document.getElementById('totalUntungLunas').textContent = formatRupiah(this.state.totals.untungLunas);
+        document.getElementById('totalBelumLunas').textContent = formatRupiah(this.state.totals.belumLunas);
+        document.getElementById('totalLunas').textContent = formatRupiah(this.state.totals.lunas);
+        document.getElementById('totalCash').textContent = formatRupiah(this.state.totals.cash);
+        document.getElementById('totalTransfer').textContent = formatRupiah(this.state.totals.transfer);
+        document.getElementById('totalModalStokSisa').textContent = formatRupiah(this.getTotalModalStokSisa());
     }
 
     resetForm() {
@@ -672,30 +1165,78 @@ class StateManager {
         localStorage.setItem('myDurenState', JSON.stringify(this.state));
     }
 
+    applyImportedData(parsed) {
+        if (Array.isArray(parsed.variants) && parsed.variants.length > 0) {
+            this.state.variants = parsed.variants.map((v, idx) => ({
+                id: String(v.id || `varian_${idx}`),
+                nama: String(v.nama || `Varian ${idx + 1}`),
+                hargaJual: Math.max(0, Number(v.hargaJual) || 0),
+                hargaPaket3: Math.max(0, Number(v.hargaPaket3) || 0),
+                modalSatuan: Math.max(0, Number(v.modalSatuan) || 0),
+                stok: Math.max(0, parseInt(v.stok, 10) || 0),
+            }));
+        } else {
+            this.state.variants = cloneDefaultVariants();
+            if (typeof parsed.stok === 'number') {
+                this.state.variants[0].stok = Math.max(0, parsed.stok);
+                this.state.variants[1].stok = 0;
+            }
+        }
+
+        if (Array.isArray(parsed.transactions)) {
+            this.state.transactions = parsed.transactions.map((trx) => {
+                const jenis = trx.jenis || (this.state.variants[0] ? this.state.variants[0].id : 'reguler');
+                const variant = this.getVariantById(jenis) || this.state.variants[0];
+                const jumlah = Math.max(1, parseInt(trx.jumlah, 10) || 1);
+                const total =
+                    typeof trx.total === 'number' ? trx.total : hitungHargaVarian(variant, jumlah);
+                const modalSatuan =
+                    typeof trx.modalSatuan === 'number'
+                        ? trx.modalSatuan
+                        : variant
+                          ? variant.modalSatuan
+                          : 0;
+                const totalModal =
+                    typeof trx.totalModal === 'number' ? trx.totalModal : jumlah * modalSatuan;
+                const untung = total - totalModal;
+
+                return {
+                    nama: String(trx.nama || 'Pembeli'),
+                    jumlah,
+                    jenis,
+                    namaVarian: trx.namaVarian || (variant ? variant.nama : jenis),
+                    total,
+                    modalSatuan,
+                    totalModal,
+                    untung,
+                    status: trx.status === 'belum lunas' ? 'belum lunas' : 'lunas',
+                    metode:
+                        trx.status === 'belum lunas'
+                            ? 'belum lunas'
+                            : trx.metode === 'transfer'
+                              ? 'transfer'
+                              : 'cash',
+                    originalMetode: trx.originalMetode || (trx.metode === 'transfer' ? 'transfer' : 'cash'),
+                };
+            });
+        } else {
+            this.state.transactions = [];
+        }
+
+        this.recalculateTotals();
+    }
+
     loadState() {
         const saved = localStorage.getItem('myDurenState');
         if (!saved) return;
 
         try {
             const parsed = JSON.parse(saved);
-            if (parsed && Array.isArray(parsed.transactions)) {
-                this.state.stok = typeof parsed.stok === 'number' ? parsed.stok : 100;
-                // Pertahankan kompatibilitas data transaksi lama di localStorage.
-                this.state.transactions = parsed.transactions.map((trx) => {
-                    const jenis = trx.jenis || 'reguler';
-                    const jumlah = parseInt(trx.jumlah, 10) || 1;
-                    return {
-                        ...trx,
-                        jumlah,
-                        jenis,
-                        total: typeof trx.total === 'number' ? trx.total : hitungTotalHarga(jenis, jumlah),
-                        originalMetode: trx.originalMetode || trx.metode || 'cash',
-                    };
-                });
-                this.recalculateTotals();
+            if (parsed && (Array.isArray(parsed.transactions) || Array.isArray(parsed.variants))) {
+                this.applyImportedData(parsed);
             }
         } catch {
-            this.showFormError('Data tersimpan rusak. Silakan klik Reset Semua bila diperlukan.');
+            this.showFormError('Data tersimpan rusak. Silakan unggah cadangan JSON atau klik Reset Transaksi.');
         }
     }
 }

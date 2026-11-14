@@ -173,7 +173,7 @@
 
             .app-shell {
                 width: 100%;
-                max-width: 1120px;
+                max-width: 1180px;
                 margin: 0 auto;
                 padding: 16px;
                 flex: 1;
@@ -185,6 +185,7 @@
                 align-items: center;
                 justify-content: space-between;
                 gap: 12px;
+                flex-wrap: wrap;
                 padding-bottom: 14px;
                 margin-bottom: 20px;
                 border-bottom: 4px double var(--border-control);
@@ -192,7 +193,7 @@
 
             .brand-group {
                 display: flex;
-                align-items: baseline;
+                align-items: center;
                 gap: 12px;
                 flex-wrap: wrap;
             }
@@ -207,7 +208,8 @@
             .header-controls {
                 display: flex;
                 align-items: center;
-                gap: 10px;
+                gap: 8px;
+                flex-wrap: wrap;
             }
 
             .stock-pill {
@@ -222,7 +224,7 @@
                 font-weight: 600;
             }
 
-            .theme-btn {
+            .header-btn {
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
@@ -232,18 +234,19 @@
                 padding: 8px 12px;
                 background-color: var(--bg-card);
                 color: var(--text-primary);
-                border: 1px solid var(--border-control);
+                border: 1.5px solid var(--border-control);
                 border-radius: 8px;
-                font-size: 0.875rem;
-                font-weight: 600;
+                font-size: 0.85rem;
+                font-weight: 700;
+                font-family: inherit;
                 transition: background-color 0.15s ease;
             }
 
-            .theme-btn:hover {
+            .header-btn:hover:not(:disabled) {
                 background-color: var(--bg-well);
             }
 
-            .theme-btn:active {
+            .header-btn:active:not(:disabled) {
                 transform: translateY(1px);
             }
 
@@ -253,6 +256,14 @@
                 grid-template-columns: 1fr;
                 gap: 20px;
                 align-items: start;
+            }
+
+            .left-column,
+            .right-column {
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+                min-width: 0;
             }
 
             .card-panel {
@@ -271,6 +282,88 @@
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+
+            .section-subtitle {
+                margin: -8px 0 14px 0;
+                font-size: 0.825rem;
+                color: var(--text-secondary);
+            }
+
+            /* Variant Catalog List */
+            .variant-list {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                margin-bottom: 14px;
+            }
+
+            .variant-item {
+                background-color: var(--bg-well);
+                border: 1.5px solid var(--border-control);
+                border-radius: 8px;
+                padding: 12px;
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .variant-info {
+                min-width: 0;
+                flex: 1;
+            }
+
+            .variant-name-row {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+
+            .variant-name {
+                margin: 0;
+                font-size: 0.95rem;
+                font-weight: 800;
+                color: var(--text-primary);
+            }
+
+            .variant-stock-tag {
+                display: inline-block;
+                padding: 2px 8px;
+                border-radius: 4px;
+                font-size: 0.75rem;
+                font-weight: 700;
+                background-color: var(--bg-card);
+                border: 1px solid var(--border-control);
+                color: var(--text-primary);
+            }
+
+            .variant-stock-tag.stock-empty {
+                background-color: var(--danger-bg);
+                border-color: var(--danger-border);
+                color: var(--danger-text);
+            }
+
+            .variant-metrics {
+                margin: 6px 0 0 0;
+                font-size: 0.8rem;
+                color: var(--text-secondary);
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px 12px;
+            }
+
+            .variant-profit-pill {
+                color: var(--status-lunas-text);
+                background-color: var(--status-lunas-bg);
+                border: 1px solid var(--status-lunas-border);
+                padding: 1px 6px;
+                border-radius: 4px;
+                font-weight: 700;
+                font-size: 0.75rem;
             }
 
             /* Form Layout */
@@ -287,9 +380,14 @@
             }
 
             .field-label {
-                font-size: 0.875rem;
+                font-size: 0.85rem;
                 font-weight: 600;
                 color: var(--text-primary);
+            }
+
+            .field-hint {
+                font-size: 0.75rem;
+                color: var(--text-secondary);
             }
 
             .form-control {
@@ -329,6 +427,12 @@
                 border: 1px solid var(--border-control);
                 border-radius: 7px;
                 display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
+
+            .preview-row {
+                display: flex;
                 align-items: center;
                 justify-content: space-between;
                 gap: 8px;
@@ -347,7 +451,13 @@
                 color: var(--text-primary);
             }
 
-            /* Alert / Error Banner (R-27) */
+            .preview-profit {
+                font-size: 0.825rem;
+                font-weight: 700;
+                color: var(--status-lunas-text);
+            }
+
+            /* Alert / Error / Notice Banner (R-27) */
             .alert-banner {
                 padding: 10px 12px;
                 border-radius: 7px;
@@ -358,7 +468,24 @@
                 font-weight: 600;
                 display: flex;
                 align-items: center;
+                justify-content: space-between;
                 gap: 8px;
+                margin-bottom: 14px;
+            }
+
+            .notice-banner {
+                padding: 10px 12px;
+                border-radius: 7px;
+                background-color: var(--status-lunas-bg);
+                border: 1.5px solid var(--status-lunas-border);
+                color: var(--status-lunas-text);
+                font-size: 0.875rem;
+                font-weight: 600;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 8px;
+                margin-bottom: 14px;
             }
 
             .hidden {
@@ -376,7 +503,7 @@
                 min-height: 44px;
                 padding: 10px 16px;
                 border-radius: 7px;
-                font-size: 0.95rem;
+                font-size: 0.925rem;
                 font-weight: 700;
                 font-family: inherit;
                 border: 1.5px solid transparent;
@@ -385,6 +512,12 @@
                 justify-content: center;
                 gap: 8px;
                 transition: background-color 0.15s ease, transform 0.1s ease;
+            }
+
+            .btn-sm {
+                min-height: 44px;
+                padding: 8px 12px;
+                font-size: 0.85rem;
             }
 
             .btn:active:not(:disabled) {
@@ -425,16 +558,16 @@
             }
 
             /* Summary Ledger Grid */
-            .right-column {
-                display: flex;
-                flex-direction: column;
-                gap: 20px;
-            }
-
             .summary-grid {
                 display: grid;
                 grid-template-columns: repeat(2, 1fr);
                 gap: 12px;
+            }
+
+            .summary-divider {
+                margin: 14px 0;
+                border: 0;
+                border-top: 1px dashed var(--border-control);
             }
 
             .summary-box {
@@ -478,8 +611,14 @@
 
             .summary-value {
                 margin: 4px 0 0 0;
-                font-size: clamp(1rem, 2vw, 1.25rem);
+                font-size: clamp(0.95rem, 1.8vw, 1.2rem);
                 font-weight: 800;
+            }
+
+            .summary-subnote {
+                margin: 3px 0 0 0;
+                font-size: 0.75rem;
+                opacity: 0.9;
             }
 
             /* Tier Badge */
@@ -499,6 +638,17 @@
                 background-color: var(--badge-premium-bg);
                 border-color: var(--badge-premium-border);
                 color: var(--badge-premium-text);
+            }
+
+            .trx-profit-line {
+                font-size: 0.78rem;
+                color: var(--text-secondary);
+                margin-top: 2px;
+            }
+
+            .trx-profit-val {
+                font-weight: 700;
+                color: var(--status-lunas-text);
             }
 
             /* Inline Selects inside Table & Mobile Cards */
@@ -544,6 +694,7 @@
                 display: inline-flex;
                 align-items: center;
                 gap: 8px;
+                flex-shrink: 0;
             }
 
             .btn-action {
@@ -564,7 +715,7 @@
                 color: var(--edit-text);
             }
 
-            .btn-edit:hover {
+            .btn-edit:hover:not(:disabled) {
                 background-color: var(--edit-hover);
             }
 
@@ -574,7 +725,7 @@
                 color: var(--danger-text);
             }
 
-            .btn-delete:hover {
+            .btn-delete:hover:not(:disabled) {
                 background-color: var(--danger-hover);
             }
 
@@ -587,7 +738,7 @@
             .ledger-table {
                 width: 100%;
                 border-collapse: collapse;
-                font-size: 0.9rem;
+                font-size: 0.88rem;
             }
 
             .ledger-table th {
@@ -597,7 +748,7 @@
                 font-weight: 700;
                 text-transform: uppercase;
                 letter-spacing: 0.04em;
-                padding: 10px 12px;
+                padding: 10px 10px;
                 border-bottom: 1.5px solid var(--border-control);
                 text-align: left;
             }
@@ -613,7 +764,7 @@
             }
 
             .ledger-table td {
-                padding: 12px;
+                padding: 12px 10px;
                 border-bottom: 1px solid var(--border-subtle);
                 vertical-align: middle;
             }
@@ -698,6 +849,7 @@
                 justify-content: center;
                 z-index: 1000;
                 padding: 16px;
+                overflow-y: auto;
             }
 
             .modal-content {
@@ -707,8 +859,9 @@
                 border-radius: 12px;
                 padding: 20px;
                 width: 100%;
-                max-width: 380px;
+                max-width: 420px;
                 box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25);
+                margin: auto;
             }
 
             .modal-title {
@@ -729,7 +882,7 @@
 
             .app-footer {
                 width: 100%;
-                max-width: 1120px;
+                max-width: 1180px;
                 margin: 0 auto;
                 padding: 12px 16px 24px;
                 font-size: 0.8rem;
@@ -781,7 +934,7 @@
             /* State 3: Desktop Split Ledger (>= 960px) */
             @media (min-width: 960px) {
                 .workspace-grid {
-                    grid-template-columns: 360px 1fr;
+                    grid-template-columns: 390px 1fr;
                     gap: 24px;
                 }
                 .form-grid {
@@ -789,10 +942,6 @@
                 }
                 .field-span-2 {
                     grid-column: span 1;
-                }
-                .sticky-panel {
-                    position: sticky;
-                    top: 20px;
                 }
             }
         </style>
@@ -803,16 +952,73 @@
                 <div class="brand-group">
                     <h1 class="app-title">myDuren</h1>
                     <div class="stock-pill" aria-live="polite">
-                        <span>Sisa Stok:</span>
-                        <strong id="headerStokBadge" class="num">100</strong>
+                        <span>Total Stok:</span>
+                        <strong id="headerStokBadge" class="num">0</strong>
                         <span>box</span>
                     </div>
                 </div>
                 <div class="header-controls">
                     <button
                         type="button"
+                        id="downloadBackupBtn"
+                        class="header-btn"
+                        aria-label="Unduh cadangan data JSON"
+                    >
+                        <svg
+                            aria-hidden="true"
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="17"
+                            height="17"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" x2="12" y1="15" y2="3" />
+                        </svg>
+                        <span>Unduh Data (.json)</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        id="uploadBackupBtn"
+                        class="header-btn"
+                        aria-label="Unggah cadangan data JSON"
+                    >
+                        <svg
+                            aria-hidden="true"
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="17"
+                            height="17"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="17 8 12 3 7 8" />
+                            <line x1="12" x2="12" y1="3" y2="15" />
+                        </svg>
+                        <span>Unggah Data (.json)</span>
+                    </button>
+                    <input
+                        type="file"
+                        id="uploadBackupInput"
+                        accept=".json,application/json"
+                        class="hidden"
+                        aria-label="Pilih berkas JSON cadangan"
+                    />
+
+                    <button
+                        type="button"
                         id="themeToggleBtn"
-                        class="theme-btn"
+                        class="header-btn"
                         aria-label="Ganti tema tampilan"
                     >
                         <svg
@@ -859,129 +1065,179 @@
                 </div>
             </header>
 
+            <div id="globalNotice" class="notice-banner hidden" role="status" aria-live="polite">
+                <span id="globalNoticeText"></span>
+            </div>
+
             <main class="workspace-grid">
-                <!-- Panel Input Kasir -->
-                <section class="card-panel sticky-panel" aria-labelledby="formHeading">
-                    <h2 id="formHeading" class="section-title">Input Penjualan</h2>
+                <!-- Kolom Kiri: Katalog Varian Duren & Input Penjualan -->
+                <div class="left-column">
+                    <!-- Langkah 1: Katalog Varian, Harga Jual, Modal & Stok -->
+                    <section class="card-panel" aria-labelledby="katalogHeading">
+                        <div class="section-title">
+                            <h2 id="katalogHeading" style="margin: 0; font-size: 1.05rem;">
+                                1. Katalog Duren, Harga &amp; Stok
+                            </h2>
+                            <button
+                                type="button"
+                                id="openAddVariantBtn"
+                                class="btn btn-secondary btn-sm"
+                            >
+                                + Tambah Varian
+                            </button>
+                        </div>
+                        <p class="section-subtitle">
+                            Atur varian duren, harga jual per box, modal satuan, dan stok yang tersedia.
+                        </p>
 
-                    <div id="formError" class="alert-banner hidden" role="alert">
-                        <span id="formErrorText"></span>
-                    </div>
+                        <div id="variantListContainer" class="variant-list"></div>
+                        <div id="emptyVariantState" class="state-box hidden">
+                            <p>Belum ada varian duren. Klik "+ Tambah Varian" untuk mengatur harga jual, modal, dan stok.</p>
+                        </div>
+                    </section>
 
-                    <div class="form-grid">
-                        <div class="field-group">
-                            <label for="stokAwal" class="field-label">Stok Box Saat Ini</label>
-                            <input
-                                type="number"
-                                id="stokAwal"
-                                value="100"
-                                min="0"
-                                class="form-control num"
-                            />
+                    <!-- Langkah 2: Panel Input Kasir -->
+                    <section class="card-panel" aria-labelledby="formHeading">
+                        <h2 id="formHeading" class="section-title">2. Input Penjualan</h2>
+
+                        <div id="formError" class="alert-banner hidden" role="alert">
+                            <span id="formErrorText"></span>
                         </div>
 
-                        <div class="field-group">
-                            <label for="namaPembeli" class="field-label">Nama Pembeli</label>
-                            <input
-                                type="text"
-                                id="namaPembeli"
-                                placeholder="Contoh: Budi"
-                                autocomplete="off"
-                                class="form-control"
-                            />
-                        </div>
+                        <div class="form-grid">
+                            <div class="field-group">
+                                <label for="namaPembeli" class="field-label">Nama Pembeli</label>
+                                <input
+                                    type="text"
+                                    id="namaPembeli"
+                                    placeholder="Contoh: Budi"
+                                    autocomplete="off"
+                                    class="form-control"
+                                />
+                            </div>
 
-                        <div class="field-group">
-                            <label for="jenisPembeli" class="field-label">Varian &amp; Kategori Harga</label>
-                            <select id="jenisPembeli" class="form-control">
-                                <option value="reguler">
-                                    Reguler (Rp 35.000/box · 3 box Rp 100.000)
-                                </option>
-                                <option value="premium">
-                                    Premium (Rp 40.000/box · 3 box Rp 110.000)
-                                </option>
-                                <option value="reseller">
-                                    Reseller Reguler (Rp 30.000/box)
-                                </option>
-                                <option value="reseller_premium">
-                                    Reseller Premium (Rp 34.000/box)
-                                </option>
-                            </select>
-                        </div>
+                            <div class="field-group">
+                                <label for="jenisPembeli" class="field-label">Pilih Varian Duren</label>
+                                <select id="jenisPembeli" class="form-control"></select>
+                            </div>
 
-                        <div class="field-group">
-                            <label for="jumlahTerjual" class="field-label">Jumlah Box Terjual</label>
-                            <input
-                                type="number"
-                                id="jumlahTerjual"
-                                placeholder="Masukkan jumlah box"
-                                min="1"
-                                class="form-control num"
-                            />
-                        </div>
+                            <div class="field-group">
+                                <label for="jumlahTerjual" class="field-label">Jumlah Box Terjual</label>
+                                <input
+                                    type="number"
+                                    id="jumlahTerjual"
+                                    placeholder="Masukkan jumlah box"
+                                    min="1"
+                                    class="form-control num"
+                                />
+                            </div>
 
-                        <div class="field-group">
-                            <label for="statusPembayaran" class="field-label">Status Pembayaran</label>
-                            <select id="statusPembayaran" class="form-control">
-                                <option value="lunas">Lunas</option>
-                                <option value="belum lunas">Belum Lunas</option>
-                            </select>
-                        </div>
+                            <div class="field-group">
+                                <label for="statusPembayaran" class="field-label">Status Pembayaran</label>
+                                <select id="statusPembayaran" class="form-control">
+                                    <option value="lunas">Lunas</option>
+                                    <option value="belum lunas">Belum Lunas</option>
+                                </select>
+                            </div>
 
-                        <div class="field-group">
-                            <label for="metodePembayaran" class="field-label">Metode Pembayaran</label>
-                            <select id="metodePembayaran" class="form-control">
-                                <option value="cash">Cash</option>
-                                <option value="transfer">Transfer</option>
-                            </select>
-                        </div>
+                            <div class="field-group field-span-2">
+                                <label for="metodePembayaran" class="field-label">Metode Pembayaran</label>
+                                <select id="metodePembayaran" class="form-control">
+                                    <option value="cash">Cash</option>
+                                    <option value="transfer">Transfer</option>
+                                </select>
+                            </div>
 
-                        <div class="field-group field-span-2">
-                            <div class="price-preview-bar" aria-live="polite">
-                                <span id="previewNote" class="preview-label">Harga satuan: Rp 35.000/box (3 box Rp 100.000)</span>
-                                <span id="previewTotal" class="preview-amount num">Rp 0</span>
+                            <div class="field-group field-span-2">
+                                <div class="price-preview-bar" aria-live="polite">
+                                    <div class="preview-row">
+                                        <span id="previewNote" class="preview-label">Pilih varian duren</span>
+                                        <span id="previewTotal" class="preview-amount num">Rp 0</span>
+                                    </div>
+                                    <div class="preview-row">
+                                        <span id="previewModalNote" class="preview-label num">Modal: Rp 0</span>
+                                        <span id="previewProfit" class="preview-profit num">Estimasi Untung: Rp 0</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="button-row field-span-2">
+                                <button type="button" id="hitungButton" class="btn btn-primary">
+                                    Tambah Penjualan
+                                </button>
+                                <button type="button" id="resetButton" class="btn btn-danger-outline">
+                                    Reset Transaksi
+                                </button>
                             </div>
                         </div>
+                    </section>
+                </div>
 
-                        <div class="button-row field-span-2">
-                            <button type="button" id="hitungButton" class="btn btn-primary">
-                                Tambah Penjualan
-                            </button>
-                            <button type="button" id="resetButton" class="btn btn-danger-outline">
-                                Reset Semua
-                            </button>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Kolom Kanan: Total Keuangan & Daftar Transaksi -->
+                <!-- Kolom Kanan: Total Keuangan, Modal/Keuntungan & Daftar Transaksi -->
                 <div class="right-column">
                     <section class="card-panel" aria-labelledby="keuanganHeading">
-                        <h2 id="keuanganHeading" class="section-title">Total Keuangan</h2>
+                        <h2 id="keuanganHeading" class="section-title">Ringkasan Keuangan &amp; Keuntungan</h2>
+
                         <div class="summary-grid">
+                            <div class="summary-box">
+                                <p class="summary-label">Total Omzet</p>
+                                <p class="summary-value num">
+                                    Rp <span id="totalOmzet">0</span>
+                                </p>
+                                <p class="summary-subnote">Semua penjualan</p>
+                            </div>
+                            <div class="summary-box">
+                                <p class="summary-label">Total Modal</p>
+                                <p class="summary-value num">
+                                    Rp <span id="totalModal">0</span>
+                                </p>
+                                <p class="summary-subnote">Modal box terjual</p>
+                            </div>
+                            <div class="summary-box box-lunas">
+                                <p class="summary-label">Total Keuntungan</p>
+                                <p class="summary-value num">
+                                    Rp <span id="totalUntung">0</span>
+                                </p>
+                                <p class="summary-subnote num">
+                                    Lunas: Rp <span id="totalUntungLunas">0</span>
+                                </p>
+                            </div>
                             <div class="summary-box box-belum">
                                 <p class="summary-label">Belum Lunas</p>
                                 <p class="summary-value num">
                                     Rp <span id="totalBelumLunas">0</span>
                                 </p>
+                                <p class="summary-subnote">Piutang pembeli</p>
                             </div>
+                        </div>
+
+                        <hr class="summary-divider" />
+
+                        <div class="summary-grid">
                             <div class="summary-box box-lunas">
-                                <p class="summary-label">Lunas</p>
+                                <p class="summary-label">Uang Masuk (Lunas)</p>
                                 <p class="summary-value num">
                                     Rp <span id="totalLunas">0</span>
                                 </p>
                             </div>
                             <div class="summary-box box-cash">
-                                <p class="summary-label">Cash</p>
+                                <p class="summary-label">Penerimaan Cash</p>
                                 <p class="summary-value num">
                                     Rp <span id="totalCash">0</span>
                                 </p>
                             </div>
                             <div class="summary-box box-transfer">
-                                <p class="summary-label">Transfer</p>
+                                <p class="summary-label">Penerimaan Transfer</p>
                                 <p class="summary-value num">
                                     Rp <span id="totalTransfer">0</span>
                                 </p>
+                            </div>
+                            <div class="summary-box">
+                                <p class="summary-label">Sisa Nilai Stok</p>
+                                <p class="summary-value num">
+                                    Rp <span id="totalModalStokSisa">0</span>
+                                </p>
+                                <p class="summary-subnote">Modal stok tersisa</p>
                             </div>
                         </div>
                     </section>
@@ -1004,7 +1260,7 @@
                                         <tr>
                                             <th scope="col">Pembeli &amp; Varian</th>
                                             <th scope="col" class="col-center">Box</th>
-                                            <th scope="col" class="col-right">Total</th>
+                                            <th scope="col" class="col-right">Penjualan &amp; Untung</th>
                                             <th scope="col" class="col-center">Status</th>
                                             <th scope="col" class="col-center">Metode</th>
                                             <th scope="col" class="col-center">Aksi</th>
@@ -1014,7 +1270,7 @@
                                 </table>
                             </div>
                             <div id="emptyStateDesktop" class="state-box hidden">
-                                <p>Belum ada transaksi. Isi form di samping untuk mencatat penjualan.</p>
+                                <p>Belum ada transaksi. Pastikan varian duren sudah diatur, lalu catat penjualan di panel kiri.</p>
                             </div>
                         </div>
 
@@ -1022,7 +1278,7 @@
                         <div class="mobile-cards">
                             <div id="cardPenjualan"></div>
                             <div id="emptyStateMobile" class="state-box hidden">
-                                <p>Belum ada transaksi. Isi form di atas untuk mencatat penjualan.</p>
+                                <p>Belum ada transaksi. Pastikan varian duren sudah diatur, lalu catat penjualan di atas.</p>
                             </div>
                         </div>
                     </section>
@@ -1032,8 +1288,95 @@
 
         <footer class="app-footer">
             <span>myDuren</span>
-            <span class="num">Reguler 35k (3 box 100k) · Premium 40k (3 box 110k) · Reseller 30k / 34k</span>
+            <span id="footerPricingSummary" class="num"></span>
         </footer>
+
+        <!-- Modal Tambah / Edit Varian Duren -->
+        <div
+            id="variantModal"
+            class="modal-overlay hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="variantModalTitle"
+        >
+            <div class="modal-content">
+                <h3 id="variantModalTitle" class="modal-title">Tambah Varian Duren</h3>
+
+                <div id="variantError" class="alert-banner hidden" role="alert">
+                    <span id="variantErrorText"></span>
+                </div>
+
+                <div class="form-grid" style="grid-template-columns: 1fr;">
+                    <div class="field-group">
+                        <label for="variantNamaInput" class="field-label">Nama Varian / Kategori</label>
+                        <input
+                            type="text"
+                            id="variantNamaInput"
+                            placeholder="Contoh: Duren Reguler / Duren Premium"
+                            class="form-control"
+                        />
+                    </div>
+
+                    <div class="field-group">
+                        <label for="variantHargaJualInput" class="field-label">Harga Jual per Box (Rp)</label>
+                        <input
+                            type="number"
+                            id="variantHargaJualInput"
+                            placeholder="Contoh: 35000"
+                            min="0"
+                            step="500"
+                            class="form-control num"
+                        />
+                    </div>
+
+                    <div class="field-group">
+                        <label for="variantHargaPaket3Input" class="field-label">Harga Paket 3 Box (Rp, Opsional)</label>
+                        <input
+                            type="number"
+                            id="variantHargaPaket3Input"
+                            placeholder="Isi 0 jika tidak ada promo 3 box"
+                            min="0"
+                            step="500"
+                            value="0"
+                            class="form-control num"
+                        />
+                        <span class="field-hint">Isi 0 bila harga selalu dihitung per box satuan.</span>
+                    </div>
+
+                    <div class="field-group">
+                        <label for="variantModalInput" class="field-label">Modal Satuan per Box (Rp)</label>
+                        <input
+                            type="number"
+                            id="variantModalInput"
+                            placeholder="Contoh: 25000"
+                            min="0"
+                            step="500"
+                            class="form-control num"
+                        />
+                    </div>
+
+                    <div class="field-group">
+                        <label for="variantStokInput" class="field-label">Stok Box Tersedia</label>
+                        <input
+                            type="number"
+                            id="variantStokInput"
+                            placeholder="Contoh: 50"
+                            min="0"
+                            class="form-control num"
+                        />
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" id="cancelVariantBtn" class="btn btn-secondary">
+                        Batal
+                    </button>
+                    <button type="button" id="saveVariantBtn" class="btn btn-primary">
+                        Simpan Varian
+                    </button>
+                </div>
+            </div>
+        </div>
 
         <!-- Modal Edit Transaksi -->
         <div
@@ -1054,13 +1397,8 @@
                 </div>
 
                 <div class="field-group" style="margin-bottom: 12px;">
-                    <label for="editJenisSelect" class="field-label">Varian &amp; Kategori Harga</label>
-                    <select id="editJenisSelect" class="form-control">
-                        <option value="reguler">Reguler (Rp 35.000/box · 3 box Rp 100.000)</option>
-                        <option value="premium">Premium (Rp 40.000/box · 3 box Rp 110.000)</option>
-                        <option value="reseller">Reseller Reguler (Rp 30.000/box)</option>
-                        <option value="reseller_premium">Reseller Premium (Rp 34.000/box)</option>
-                    </select>
+                    <label for="editJenisSelect" class="field-label">Pilih Varian Duren</label>
+                    <select id="editJenisSelect" class="form-control"></select>
                 </div>
 
                 <div class="field-group">
@@ -1084,7 +1422,7 @@
             </div>
         </div>
 
-        <!-- Modal Konfirmasi (Hapus / Reset) -->
+        <!-- Modal Konfirmasi (Hapus / Reset / Restore) -->
         <div
             id="confirmModal"
             class="modal-overlay hidden"
