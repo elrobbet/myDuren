@@ -27,7 +27,7 @@
 
 ## Liveliness Levers & Decisions (R-31: One-Line Reasons)
 - **Why this color?** Kertas krem hangat (`#F7F4EE`) dan hijau kulit durian (`#2D5A27`) memberi identitas produk durian yang kontras tinggi tanpa silau putih steril.
-- **Why this layout?** Tiga tahap responsif (1 kolom ponsel `<640px`, 2 kolom tablet `640px-960px`, dan split panel kasir + buku transaksi di desktop `>960px`) agar input kasir dan daftar transaksi terlihat sekaligus di layar lebar.
+- **Why this layout?** Tiga tahap responsif (1 kolom ponsel `<640px`, 2 kolom tablet `640px-960px`, dan split panel kasir + buku transaksi di desktop `>960px`) agar input kasir dan daftar transaksi terlihat sekaligus di layar lebar, serta menu tarik berlabel "Menu" di ponsel agar header tetap ringkas hanya menampilkan Sisa Stok.
 - **Why this typography?** Angka transaksi memakai `font-variant-numeric: tabular-nums` dan font monospace agar nominal Rupiah mudah dijumlahkan secara visual.
 - **Why this spacing?** Kerapatan ringkas (`12px-20px`) pada form kasir dipadukan dengan pemisah garis tegas (`1px solid`) seperti buku nota cetak.
 - **Why use cards?** Di layar sempit (`<640px`), baris tabel diubah menjadi kartu nota individual agar kontrol status, metode bayar, dan tombol aksi tetap memenuhi target sentuh `44x44px` tanpa geser horizontal.

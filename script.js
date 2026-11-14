@@ -5,7 +5,6 @@ const DEFAULT_VARIANTS = [
         hargaJual: 35000,
         hargaPaket3: 100000,
         modalSatuan: 25000,
-        stok: 50,
     },
     {
         id: 'premium',
@@ -13,7 +12,6 @@ const DEFAULT_VARIANTS = [
         hargaJual: 40000,
         hargaPaket3: 110000,
         modalSatuan: 30000,
-        stok: 50,
     },
     {
         id: 'reseller',
@@ -21,7 +19,6 @@ const DEFAULT_VARIANTS = [
         hargaJual: 30000,
         hargaPaket3: 0,
         modalSatuan: 25000,
-        stok: 0,
     },
     {
         id: 'reseller_premium',
@@ -29,7 +26,6 @@ const DEFAULT_VARIANTS = [
         hargaJual: 34000,
         hargaPaket3: 0,
         modalSatuan: 30000,
-        stok: 0,
     },
 ];
 
@@ -94,6 +90,7 @@ function getInfoTarifVarian(variant, jumlah) {
 class StateManager {
     constructor() {
         this.state = {
+            stok: 100,
             variants: cloneDefaultVariants(),
             transactions: [],
             totals: {
@@ -154,16 +151,26 @@ class StateManager {
         return this.state.variants.find((v) => v.id === id) || null;
     }
 
-    getTotalStok() {
-        return this.state.variants.reduce((acc, v) => acc + (Math.max(0, parseInt(v.stok, 10)) || 0), 0);
-    }
+    toggleMobileMenu(forceOpen = null) {
+        const menu = document.getElementById('headerControlsMenu');
+        const btn = document.getElementById('mobileMenuBtn');
+        const iconHam = document.getElementById('menuIconHamburger');
+        const iconClose = document.getElementById('menuIconClose');
 
-    getTotalModalStokSisa() {
-        return this.state.variants.reduce((acc, v) => {
-            const stok = Math.max(0, parseInt(v.stok, 10) || 0);
-            const modal = Math.max(0, Number(v.modalSatuan) || 0);
-            return acc + stok * modal;
-        }, 0);
+        const isOpen = menu.classList.contains('menu-open');
+        const nextState = forceOpen !== null ? forceOpen : !isOpen;
+
+        if (nextState) {
+            menu.classList.add('menu-open');
+            btn.setAttribute('aria-expanded', 'true');
+            iconHam.classList.add('hidden');
+            iconClose.classList.remove('hidden');
+        } else {
+            menu.classList.remove('menu-open');
+            btn.setAttribute('aria-expanded', 'false');
+            iconHam.classList.remove('hidden');
+            iconClose.classList.add('hidden');
+        }
     }
 
     showNotice(msg) {
@@ -207,9 +214,27 @@ class StateManager {
     }
 
     setupEventListeners() {
+        document.getElementById('mobileMenuBtn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.toggleMobileMenu();
+        });
+
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('headerControlsMenu');
+            const btn = document.getElementById('mobileMenuBtn');
+            if (
+                menu.classList.contains('menu-open') &&
+                !menu.contains(e.target) &&
+                !btn.contains(e.target)
+            ) {
+                this.toggleMobileMenu(false);
+            }
+        });
+
         document.getElementById('themeToggleBtn').addEventListener('click', () => {
             const current = document.documentElement.getAttribute('data-theme');
             this.applyTheme(current === 'dark' ? 'light' : 'dark');
+            this.toggleMobileMenu(false);
         });
 
         document.getElementById('openAddVariantBtn').addEventListener('click', (e) => {
@@ -217,11 +242,13 @@ class StateManager {
         });
 
         document.getElementById('downloadBackupBtn').addEventListener('click', () => {
+            this.toggleMobileMenu(false);
             this.handleDownloadBackup();
         });
 
         const uploadInput = document.getElementById('uploadBackupInput');
         document.getElementById('uploadBackupBtn').addEventListener('click', () => {
+            this.toggleMobileMenu(false);
             uploadInput.value = '';
             uploadInput.click();
         });
@@ -230,6 +257,16 @@ class StateManager {
             const file = e.target.files && e.target.files[0];
             if (file) {
                 this.handleUploadBackup(file);
+            }
+        });
+
+        document.getElementById('stokAwal').addEventListener('change', (e) => {
+            const val = parseInt(e.target.value, 10);
+            if (!isNaN(val) && val >= 0) {
+                this.state.stok = val;
+                this.saveState();
+                this.updateUI();
+                this.updatePricePreview();
             }
         });
 
@@ -284,7 +321,7 @@ class StateManager {
         document.getElementById('previewModalNote').textContent =
             jumlah > 0
                 ? `Modal (${jumlah} box × Rp ${formatRupiah(variant.modalSatuan)}): Rp ${formatRupiah(totalModal)}`
-                : `Modal satuan: Rp ${formatRupiah(variant.modalSatuan)}/box · Stok: ${variant.stok} box`;
+                : `Modal satuan: Rp ${formatRupiah(variant.modalSatuan)}/box · Sisa Stok Umum: ${this.state.stok} box`;
         document.getElementById('previewProfit').textContent =
             jumlah > 0
                 ? `Estimasi Untung: Rp ${formatRupiah(untung)}`
@@ -375,6 +412,8 @@ class StateManager {
                     this.closeEditModal();
                 } else if (!confirmModal.classList.contains('hidden')) {
                     this.closeConfirmModal();
+                } else {
+                    this.toggleMobileMenu(false);
                 }
             }
         });
@@ -390,7 +429,6 @@ class StateManager {
         const hargaJualInput = document.getElementById('variantHargaJualInput');
         const hargaPaket3Input = document.getElementById('variantHargaPaket3Input');
         const modalInput = document.getElementById('variantModalInput');
-        const stokInput = document.getElementById('variantStokInput');
 
         if (variantId) {
             const v = this.getVariantById(variantId);
@@ -400,14 +438,12 @@ class StateManager {
             hargaJualInput.value = v.hargaJual;
             hargaPaket3Input.value = v.hargaPaket3 || 0;
             modalInput.value = v.modalSatuan || 0;
-            stokInput.value = v.stok || 0;
         } else {
             titleEl.textContent = 'Tambah Varian Duren';
             namaInput.value = '';
             hargaJualInput.value = '';
             hargaPaket3Input.value = '0';
             modalInput.value = '';
-            stokInput.value = '';
         }
 
         document.getElementById('variantModal').classList.remove('hidden');
@@ -429,7 +465,6 @@ class StateManager {
         const rawPaket3 = parseInt(document.getElementById('variantHargaPaket3Input').value, 10);
         const hargaPaket3 = isNaN(rawPaket3) || rawPaket3 < 0 ? 0 : rawPaket3;
         const modalSatuan = parseInt(document.getElementById('variantModalInput').value, 10);
-        const stok = parseInt(document.getElementById('variantStokInput').value, 10);
 
         if (!nama) {
             this.showVariantError('Nama varian duren wajib diisi.');
@@ -449,12 +484,6 @@ class StateManager {
             return;
         }
 
-        if (isNaN(stok) || stok < 0) {
-            this.showVariantError('Stok box tersedia wajib diisi (minimal 0).');
-            document.getElementById('variantStokInput').focus();
-            return;
-        }
-
         if (this.editingVariantId) {
             const existing = this.getVariantById(this.editingVariantId);
             if (!existing) return;
@@ -462,9 +491,7 @@ class StateManager {
             existing.hargaJual = hargaJual;
             existing.hargaPaket3 = hargaPaket3;
             existing.modalSatuan = modalSatuan;
-            existing.stok = stok;
 
-            // Perbarui label varian pada transaksi yang memakai varian ini
             for (const trx of this.state.transactions) {
                 if (trx.jenis === existing.id) {
                     trx.namaVarian = nama;
@@ -484,7 +511,6 @@ class StateManager {
                 hargaJual,
                 hargaPaket3,
                 modalSatuan,
-                stok,
             });
             this.showNotice(`Varian "${nama}" berhasil ditambahkan.`);
         }
@@ -507,7 +533,7 @@ class StateManager {
 
         this.openConfirmModal(
             'Hapus Varian Duren',
-            `Hapus varian "${v.nama}" (stok: ${v.stok} box) dari katalog? Catatan transaksi lama tetap tersimpan.`,
+            `Hapus varian "${v.nama}" dari katalog? Catatan transaksi lama tetap tersimpan.`,
             () => {
                 this.state.variants = this.state.variants.filter((item) => item.id !== variantId);
                 this.saveState();
@@ -612,32 +638,19 @@ class StateManager {
         const trx = this.state.transactions[index];
         if (!trx) return;
 
-        const oldVariant = this.getVariantById(trx.jenis);
         const newVariant = this.getVariantById(newJenis);
-
         if (!newVariant) {
             this.showEditError('Varian yang dipilih tidak ditemukan.');
             return;
         }
 
-        if (trx.jenis === newJenis) {
-            const diff = newJumlah - trx.jumlah;
-            if (diff > 0 && diff > newVariant.stok) {
-                this.showEditError(`Stok ${newVariant.nama} tidak cukup. Sisa stok: ${newVariant.stok} box.`);
-                return;
-            }
-            newVariant.stok -= diff;
-        } else {
-            if (newJumlah > newVariant.stok) {
-                this.showEditError(`Stok ${newVariant.nama} tidak cukup. Sisa stok: ${newVariant.stok} box.`);
-                return;
-            }
-            if (oldVariant) {
-                oldVariant.stok += trx.jumlah;
-            }
-            newVariant.stok -= newJumlah;
+        const diff = newJumlah - trx.jumlah;
+        if (diff > 0 && diff > this.state.stok) {
+            this.showEditError(`Stok tidak cukup. Sisa stok saat ini: ${this.state.stok} box.`);
+            return;
         }
 
+        this.state.stok -= diff;
         trx.jumlah = newJumlah;
         trx.jenis = newJenis;
         trx.namaVarian = newVariant.nama;
@@ -659,12 +672,9 @@ class StateManager {
 
         this.openConfirmModal(
             'Hapus Transaksi',
-            `Hapus catatan pembelian "${trx.nama}" (${trx.jumlah} box ${trx.namaVarian || ''})? Stok varian akan dikembalikan.`,
+            `Hapus catatan pembelian "${trx.nama}" (${trx.jumlah} box ${trx.namaVarian || ''})? Stok akan dikembalikan.`,
             () => {
-                const variant = this.getVariantById(trx.jenis);
-                if (variant) {
-                    variant.stok += trx.jumlah;
-                }
+                this.state.stok += trx.jumlah;
                 this.state.transactions.splice(index, 1);
                 this.recalculateTotals();
                 this.saveState();
@@ -706,6 +716,7 @@ class StateManager {
     handleHitung() {
         const nama = document.getElementById('namaPembeli').value.trim();
         const jumlah = parseInt(document.getElementById('jumlahTerjual').value, 10);
+        const stokAwalInput = parseInt(document.getElementById('stokAwal').value, 10);
         const jenisId = document.getElementById('jenisPembeli').value;
         const status = document.getElementById('statusPembayaran').value;
         const metode = document.getElementById('metodePembayaran').value;
@@ -730,10 +741,10 @@ class StateManager {
             return;
         }
 
-        if (jumlah > variant.stok) {
-            this.showFormError(
-                `Stok ${variant.nama} tidak mencukupi (tersedia ${variant.stok} box). Silakan tambah stok di Katalog Duren.`,
-            );
+        const stokTersedia = isNaN(stokAwalInput) ? this.state.stok : stokAwalInput;
+
+        if (jumlah > stokTersedia) {
+            this.showFormError(`Stok tidak mencukupi (tersedia ${stokTersedia} box).`);
             document.getElementById('jumlahTerjual').focus();
             return;
         }
@@ -742,7 +753,7 @@ class StateManager {
         const totalModal = hitungModalVarian(variant, jumlah);
         const untung = total - totalModal;
 
-        variant.stok -= jumlah;
+        this.state.stok = stokTersedia - jumlah;
         this.state.transactions.push({
             nama,
             jumlah,
@@ -767,14 +778,10 @@ class StateManager {
         const resetBtn = document.getElementById('resetButton');
         this.openConfirmModal(
             'Reset Daftar Transaksi',
-            'Semua daftar transaksi penjualan akan dihapus dan stok dari transaksi tersebut dikembalikan ke masing-masing varian (harga & katalog varian Anda tidak dihapus).',
+            'Semua daftar transaksi penjualan akan dihapus dan stok dari transaksi tersebut dikembalikan (daftar varian dan harga tidak dihapus).',
             () => {
-                for (const trx of this.state.transactions) {
-                    const v = this.getVariantById(trx.jenis);
-                    if (v) {
-                        v.stok += trx.jumlah || 0;
-                    }
-                }
+                const totalReturned = this.state.transactions.reduce((acc, trx) => acc + (trx.jumlah || 0), 0);
+                this.state.stok += totalReturned;
                 this.state.transactions = [];
                 this.recalculateTotals();
                 this.saveState();
@@ -795,8 +802,9 @@ class StateManager {
 
         const payload = {
             app: 'myDuren',
-            version: 2,
+            version: 3,
             exportedAt: now.toISOString(),
+            stok: this.state.stok,
             variants: this.state.variants,
             transactions: this.state.transactions,
             totals: this.state.totals,
@@ -887,16 +895,12 @@ class StateManager {
                     v.hargaPaket3 && v.hargaPaket3 > 0
                         ? ` · 3 box Rp ${formatRupiah(v.hargaPaket3)}`
                         : '';
-                const isEmpty = (parseInt(v.stok, 10) || 0) <= 0;
 
                 return `
                 <div class="variant-item">
                     <div class="variant-info">
                         <div class="variant-name-row">
                             <p class="variant-name">${safeNama}</p>
-                            <span class="variant-stock-tag num ${isEmpty ? 'stock-empty' : ''}">
-                                Stok: ${formatRupiah(v.stok)} box
-                            </span>
                             <span class="variant-profit-pill num">
                                 Untung Rp ${formatRupiah(marginPerBox)}/box
                             </span>
@@ -911,8 +915,8 @@ class StateManager {
                             type="button"
                             class="btn-action btn-edit edit-variant-btn"
                             data-id="${safeId}"
-                            aria-label="Edit harga dan stok varian ${safeNama}"
-                            title="Edit harga, modal & stok"
+                            aria-label="Edit harga dan modal varian ${safeNama}"
+                            title="Edit harga & modal"
                         >
                             <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
                         </button>
@@ -943,7 +947,7 @@ class StateManager {
                 const safeId = escapeHtml(v.id);
                 const paketNote =
                     v.hargaPaket3 && v.hargaPaket3 > 0 ? ` · 3 box Rp ${formatRupiah(v.hargaPaket3)}` : '';
-                return `<option value="${safeId}">${safeNama} (Rp ${formatRupiah(v.hargaJual)}/box${paketNote} · Stok: ${v.stok})</option>`;
+                return `<option value="${safeId}">${safeNama} (Rp ${formatRupiah(v.hargaJual)}/box${paketNote})</option>`;
             })
             .join('');
 
@@ -980,7 +984,8 @@ class StateManager {
         this.renderVariantSelects();
         this.updateFooterSummary();
 
-        document.getElementById('headerStokBadge').textContent = formatRupiah(this.getTotalStok());
+        document.getElementById('stokAwal').value = this.state.stok;
+        document.getElementById('headerStokBadge').textContent = formatRupiah(this.state.stok);
 
         const totalBoxTerjual = this.state.transactions.reduce((acc, item) => acc + (item.jumlah || 0), 0);
         document.getElementById('totalBoxTerjualLabel').textContent = `${formatRupiah(totalBoxTerjual)} box terjual`;
@@ -1152,7 +1157,6 @@ class StateManager {
         document.getElementById('totalLunas').textContent = formatRupiah(this.state.totals.lunas);
         document.getElementById('totalCash').textContent = formatRupiah(this.state.totals.cash);
         document.getElementById('totalTransfer').textContent = formatRupiah(this.state.totals.transfer);
-        document.getElementById('totalModalStokSisa').textContent = formatRupiah(this.getTotalModalStokSisa());
     }
 
     resetForm() {
@@ -1166,6 +1170,15 @@ class StateManager {
     }
 
     applyImportedData(parsed) {
+        if (typeof parsed.stok === 'number' && parsed.stok >= 0) {
+            this.state.stok = Math.round(parsed.stok);
+        } else if (Array.isArray(parsed.variants)) {
+            const sumVariantStok = parsed.variants.reduce((acc, v) => acc + (parseInt(v.stok, 10) || 0), 0);
+            this.state.stok = sumVariantStok > 0 ? sumVariantStok : 100;
+        } else {
+            this.state.stok = 100;
+        }
+
         if (Array.isArray(parsed.variants) && parsed.variants.length > 0) {
             this.state.variants = parsed.variants.map((v, idx) => ({
                 id: String(v.id || `varian_${idx}`),
@@ -1173,14 +1186,9 @@ class StateManager {
                 hargaJual: Math.max(0, Number(v.hargaJual) || 0),
                 hargaPaket3: Math.max(0, Number(v.hargaPaket3) || 0),
                 modalSatuan: Math.max(0, Number(v.modalSatuan) || 0),
-                stok: Math.max(0, parseInt(v.stok, 10) || 0),
             }));
         } else {
             this.state.variants = cloneDefaultVariants();
-            if (typeof parsed.stok === 'number') {
-                this.state.variants[0].stok = Math.max(0, parsed.stok);
-                this.state.variants[1].stok = 0;
-            }
         }
 
         if (Array.isArray(parsed.transactions)) {
