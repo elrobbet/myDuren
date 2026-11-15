@@ -90,6 +90,7 @@ function getInfoTarifVarian(variant, jumlah) {
 class StateManager {
     constructor() {
         this.state = {
+            stokAwal: 100,
             stok: 100,
             variants: cloneDefaultVariants(),
             transactions: [],
@@ -260,14 +261,26 @@ class StateManager {
             }
         });
 
-        document.getElementById('stokAwal').addEventListener('change', (e) => {
+        const stokAwalInputEl = document.getElementById('stokAwal');
+        stokAwalInputEl.addEventListener('input', (e) => {
             const val = parseInt(e.target.value, 10);
             if (!isNaN(val) && val >= 0) {
-                this.state.stok = val;
+                this.state.stokAwal = val;
+                this.recalculateTotals();
                 this.saveState();
                 this.updateUI();
                 this.updatePricePreview();
             }
+        });
+
+        stokAwalInputEl.addEventListener('change', (e) => {
+            const val = parseInt(e.target.value, 10);
+            this.state.stokAwal = !isNaN(val) && val >= 0 ? val : 0;
+            e.target.value = this.state.stokAwal;
+            this.recalculateTotals();
+            this.saveState();
+            this.updateUI();
+            this.updatePricePreview();
         });
 
         document.getElementById('hitungButton').addEventListener('click', () => this.handleHitung());
@@ -601,11 +614,15 @@ class StateManager {
             untungLunas: 0,
         };
 
+        let totalBoxTerjual = 0;
+
         for (const trx of this.state.transactions) {
+            const jumlah = Number(trx.jumlah) || 0;
             const totalJual = Number(trx.total) || 0;
             const totalModal = Number(trx.totalModal) || 0;
             const untung = totalJual - totalModal;
 
+            totalBoxTerjual += jumlah;
             trx.untung = untung;
             totals.omzet += totalJual;
             totals.modal += totalModal;
@@ -622,6 +639,9 @@ class StateManager {
             }
         }
 
+        const stokAwalValid = Number.isFinite(this.state.stokAwal) ? Math.max(0, Math.round(this.state.stokAwal)) : 100;
+        this.state.stokAwal = stokAwalValid;
+        this.state.stok = stokAwalValid - totalBoxTerjual;
         this.state.totals = totals;
     }
 
@@ -646,11 +666,10 @@ class StateManager {
 
         const diff = newJumlah - trx.jumlah;
         if (diff > 0 && diff > this.state.stok) {
-            this.showEditError(`Stok tidak cukup. Sisa stok saat ini: ${this.state.stok} box.`);
+            this.showEditError(`Stok saat ini tidak cukup. Sisa stok saat ini: ${this.state.stok} box.`);
             return;
         }
 
-        this.state.stok -= diff;
         trx.jumlah = newJumlah;
         trx.jenis = newJenis;
         trx.namaVarian = newVariant.nama;
@@ -672,9 +691,8 @@ class StateManager {
 
         this.openConfirmModal(
             'Hapus Transaksi',
-            `Hapus catatan pembelian "${trx.nama}" (${trx.jumlah} box ${trx.namaVarian || ''})? Stok akan dikembalikan.`,
+            `Hapus catatan pembelian "${trx.nama}" (${trx.jumlah} box ${trx.namaVarian || ''})? Stok saat ini akan dikembalikan.`,
             () => {
-                this.state.stok += trx.jumlah;
                 this.state.transactions.splice(index, 1);
                 this.recalculateTotals();
                 this.saveState();
@@ -723,6 +741,11 @@ class StateManager {
 
         this.hideFormError();
 
+        if (!isNaN(stokAwalInput) && stokAwalInput >= 0 && stokAwalInput !== this.state.stokAwal) {
+            this.state.stokAwal = stokAwalInput;
+            this.recalculateTotals();
+        }
+
         if (!nama) {
             this.showFormError('Nama pembeli wajib diisi.');
             document.getElementById('namaPembeli').focus();
@@ -741,10 +764,8 @@ class StateManager {
             return;
         }
 
-        const stokTersedia = isNaN(stokAwalInput) ? this.state.stok : stokAwalInput;
-
-        if (jumlah > stokTersedia) {
-            this.showFormError(`Stok tidak mencukupi (tersedia ${stokTersedia} box).`);
+        if (jumlah > this.state.stok) {
+            this.showFormError(`Stok saat ini tidak mencukupi (tersisa ${this.state.stok} box dari stok awal ${this.state.stokAwal} box).`);
             document.getElementById('jumlahTerjual').focus();
             return;
         }
@@ -753,7 +774,6 @@ class StateManager {
         const totalModal = hitungModalVarian(variant, jumlah);
         const untung = total - totalModal;
 
-        this.state.stok = stokTersedia - jumlah;
         this.state.transactions.push({
             nama,
             jumlah,
@@ -778,17 +798,15 @@ class StateManager {
         const resetBtn = document.getElementById('resetButton');
         this.openConfirmModal(
             'Reset Daftar Transaksi',
-            'Semua daftar transaksi penjualan akan dihapus dan stok dari transaksi tersebut dikembalikan (daftar varian dan harga tidak dihapus).',
+            `Semua daftar transaksi penjualan akan dihapus dan Stok Saat Ini akan kembali ke Stok Awal (${this.state.stokAwal} box).`,
             () => {
-                const totalReturned = this.state.transactions.reduce((acc, trx) => acc + (trx.jumlah || 0), 0);
-                this.state.stok += totalReturned;
                 this.state.transactions = [];
                 this.recalculateTotals();
                 this.saveState();
                 this.hideFormError();
                 this.updateUI();
                 this.updatePricePreview();
-                this.showNotice('Semua transaksi berhasil direset dan stok telah dikembalikan.');
+                this.showNotice(`Semua transaksi berhasil direset. Stok Saat Ini kembali ke ${this.state.stokAwal} box.`);
             },
             resetBtn,
         );
@@ -802,8 +820,9 @@ class StateManager {
 
         const payload = {
             app: 'myDuren',
-            version: 3,
+            version: 4,
             exportedAt: now.toISOString(),
+            stokAwal: this.state.stokAwal,
             stok: this.state.stok,
             variants: this.state.variants,
             transactions: this.state.transactions,
@@ -829,7 +848,8 @@ class StateManager {
         const reader = new FileReader();
         reader.onload = (event) => {
             try {
-                const parsed = JSON.parse(event.target.result);
+                const rawText = String(event.target.result || '').replace(/"stok"\s*:\s*,/g, '');
+                const parsed = JSON.parse(rawText);
                 if (!parsed || (!Array.isArray(parsed.variants) && !Array.isArray(parsed.transactions))) {
                     this.showFormError('Berkas JSON tidak valid atau bukan format cadangan myDuren.');
                     return;
@@ -837,16 +857,21 @@ class StateManager {
 
                 const countVarian = Array.isArray(parsed.variants) ? parsed.variants.length : DEFAULT_VARIANTS.length;
                 const countTrx = Array.isArray(parsed.transactions) ? parsed.transactions.length : 0;
+                const totalBoxUpload = Array.isArray(parsed.transactions)
+                    ? parsed.transactions.reduce((acc, item) => acc + (parseInt(item.jumlah, 10) || 0), 0)
+                    : 0;
 
                 this.openConfirmModal(
                     'Pulihkan Data dari Berkas',
-                    `Muat data dari "${file.name}" (${countVarian} varian, ${countTrx} transaksi)? Data saat ini akan digantikan oleh isi berkas tersebut.`,
+                    `Muat data dari "${file.name}" (${countVarian} varian, ${countTrx} transaksi / ${totalBoxUpload} box terjual)? Stok Awal (${this.state.stokAwal} box) tidak akan diubah dan otomatis dikurangi ${totalBoxUpload} box.`,
                     () => {
-                        this.applyImportedData(parsed);
+                        this.applyImportedData(parsed, { preserveStokAwal: true });
                         this.saveState();
                         this.updateUI();
                         this.updatePricePreview();
-                        this.showNotice(`Data dari "${file.name}" berhasil dimuat dan ditampilkan kembali.`);
+                        this.showNotice(
+                            `Data "${file.name}" berhasil dimuat. Stok Awal: ${this.state.stokAwal} box · Terjual: ${totalBoxUpload} box · Stok Saat Ini: ${this.state.stok} box.`,
+                        );
                     },
                     document.getElementById('uploadBackupBtn'),
                 );
@@ -984,10 +1009,29 @@ class StateManager {
         this.renderVariantSelects();
         this.updateFooterSummary();
 
-        document.getElementById('stokAwal').value = this.state.stok;
+        const totalBoxTerjual = this.state.transactions.reduce((acc, item) => acc + (item.jumlah || 0), 0);
+        this.state.stok = this.state.stokAwal - totalBoxTerjual;
+
+        const stokAwalEl = document.getElementById('stokAwal');
+        if (document.activeElement !== stokAwalEl) {
+            stokAwalEl.value = this.state.stokAwal;
+        }
+
         document.getElementById('headerStokBadge').textContent = formatRupiah(this.state.stok);
 
-        const totalBoxTerjual = this.state.transactions.reduce((acc, item) => acc + (item.jumlah || 0), 0);
+        const stokSaatIniBox = document.getElementById('stokSaatIniBox');
+        const stokSaatIniValue = document.getElementById('stokSaatIniValue');
+        const stokRingkasanHint = document.getElementById('stokRingkasanHint');
+
+        stokSaatIniValue.textContent = `${formatRupiah(this.state.stok)} box`;
+        if (this.state.stok < 0) {
+            stokSaatIniBox.classList.add('stock-deficit');
+            stokRingkasanHint.textContent = `Stok Awal: ${formatRupiah(this.state.stokAwal)} box · Terjual: ${formatRupiah(totalBoxTerjual)} box · Kurang ${formatRupiah(Math.abs(this.state.stok))} box (Naikkan angka Stok Awal)`;
+        } else {
+            stokSaatIniBox.classList.remove('stock-deficit');
+            stokRingkasanHint.textContent = `Stok Awal: ${formatRupiah(this.state.stokAwal)} box · Terjual: ${formatRupiah(totalBoxTerjual)} box · Stok Saat Ini: ${formatRupiah(this.state.stok)} box`;
+        }
+
         document.getElementById('totalBoxTerjualLabel').textContent = `${formatRupiah(totalBoxTerjual)} box terjual`;
 
         const hasTransactions = this.state.transactions.length > 0;
@@ -1169,15 +1213,8 @@ class StateManager {
         localStorage.setItem('myDurenState', JSON.stringify(this.state));
     }
 
-    applyImportedData(parsed) {
-        if (typeof parsed.stok === 'number' && parsed.stok >= 0) {
-            this.state.stok = Math.round(parsed.stok);
-        } else if (Array.isArray(parsed.variants)) {
-            const sumVariantStok = parsed.variants.reduce((acc, v) => acc + (parseInt(v.stok, 10) || 0), 0);
-            this.state.stok = sumVariantStok > 0 ? sumVariantStok : 100;
-        } else {
-            this.state.stok = 100;
-        }
+    applyImportedData(parsed, options = {}) {
+        const preserveStokAwal = Boolean(options && options.preserveStokAwal);
 
         if (Array.isArray(parsed.variants) && parsed.variants.length > 0) {
             this.state.variants = parsed.variants.map((v, idx) => ({
@@ -1229,6 +1266,23 @@ class StateManager {
             });
         } else {
             this.state.transactions = [];
+        }
+
+        if (preserveStokAwal) {
+            const currentInputVal = parseInt(document.getElementById('stokAwal').value, 10);
+            if (!isNaN(currentInputVal) && currentInputVal >= 0) {
+                this.state.stokAwal = currentInputVal;
+            }
+        } else if (typeof parsed.stokAwal === 'number' && parsed.stokAwal >= 0) {
+            this.state.stokAwal = Math.round(parsed.stokAwal);
+        } else if (typeof parsed.stok === 'number' && parsed.stok >= 0) {
+            const totalBoxInParsed = this.state.transactions.reduce((acc, item) => acc + (item.jumlah || 0), 0);
+            this.state.stokAwal = Math.round(parsed.stok) + totalBoxInParsed;
+        } else if (Array.isArray(parsed.variants)) {
+            const sumVariantStok = parsed.variants.reduce((acc, v) => acc + (parseInt(v.stok, 10) || 0), 0);
+            this.state.stokAwal = sumVariantStok > 0 ? sumVariantStok : 100;
+        } else {
+            this.state.stokAwal = 100;
         }
 
         this.recalculateTotals();

@@ -378,6 +378,42 @@
                 color: var(--text-secondary);
             }
 
+            .stock-overview-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 12px;
+                padding: 12px;
+                background-color: var(--bg-well);
+                border: 1.5px solid var(--border-control);
+                border-radius: 8px;
+            }
+
+            .stock-current-box {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                min-height: 44px;
+                padding: 8px 12px;
+                background-color: var(--status-lunas-bg);
+                border: 1.5px solid var(--status-lunas-border);
+                color: var(--status-lunas-text);
+                border-radius: 7px;
+                font-size: 1.05rem;
+                font-weight: 800;
+            }
+
+            .stock-current-box.stock-deficit {
+                background-color: var(--danger-bg);
+                border-color: var(--danger-border);
+                color: var(--danger-text);
+            }
+
+            @media (max-width: 420px) {
+                .stock-overview-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+
             .form-control {
                 width: 100%;
                 min-height: 44px;
@@ -1171,15 +1207,32 @@
 
                         <div class="form-grid">
                             <div class="field-group field-span-2">
-                                <label for="stokAwal" class="field-label">Stok Box Saat Ini (Semua Varian)</label>
-                                <input
-                                    type="number"
-                                    id="stokAwal"
-                                    value="100"
-                                    min="0"
-                                    class="form-control num"
-                                />
-                                <span class="field-hint">Stok umum ini otomatis berkurang setiap ada penjualan varian apa pun.</span>
+                                <div class="stock-overview-grid">
+                                    <div class="field-group">
+                                        <label for="stokAwal" class="field-label">Stok Awal (Box)</label>
+                                        <input
+                                            type="number"
+                                            id="stokAwal"
+                                            value="100"
+                                            min="0"
+                                            class="form-control num"
+                                        />
+                                    </div>
+                                    <div class="field-group">
+                                        <span class="field-label" id="stokSaatIniLabel">Stok Saat Ini (Sisa)</span>
+                                        <div
+                                            id="stokSaatIniBox"
+                                            class="stock-current-box num"
+                                            aria-labelledby="stokSaatIniLabel"
+                                            aria-live="polite"
+                                        >
+                                            <span id="stokSaatIniValue">100 box</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <span id="stokRingkasanHint" class="field-hint num">
+                                    Stok Awal: 100 box · Terjual: 0 box · Stok Saat Ini: 100 box (Tidak tertimpa saat unggah data JSON)
+                                </span>
                             </div>
 
                             <div class="field-group">
